@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PocketPal — Premium AI Finance Tracker</title>
+<script>const _cw=console.warn;console.warn=(...a)=>{if(typeof a[0]==="string"&&a[0].includes("cdn.tailwindcss.com"))return;_cw.apply(console,a);};</script>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "error": "#f87171","inverse-primary": "#818cf8","on-error": "#7f1d1d",
+        "surface-dim": "#060A16","tertiary-container": "#164e63",
+        "on-tertiary-fixed-variant": "#0e7490","on-tertiary-fixed": "#083344",
+        "surface-container-high": "#1E293B","background": "#060A16",
+        "on-tertiary": "#ecfeff","surface-container": "#0F172A",
+        "on-primary-fixed": "#312e81","surface-container-low": "#0A0F1D",
+        "error-container": "#991b1b","surface-container-lowest": "#030712",
+        "on-secondary": "#172554","on-secondary-fixed": "#1e3a8a",
+        "primary-fixed-dim": "#c7d2fe","surface-container-highest": "#334155",
+        "surface-tint": "#818cf8","primary-fixed": "#e0e7ff",
+        "on-primary-container": "#e0e7ff","on-background": "#f8fafc",
+        "inverse-surface": "#f8fafc","on-tertiary-container": "#cffafe",
+        "on-primary-fixed-variant": "#4338ca","tertiary": "#22d3ee",
+        "on-error-container": "#fecaca","outline": "#64748b",
+        "on-secondary-fixed-variant": "#2563eb","on-secondary-container": "#dbeafe",
+        "primary": "#818cf8","outline-variant": "#475569","secondary": "#60a5fa",
+        "surface-variant": "#1e293b","primary-container": "#6366f1",
+        "tertiary-fixed-dim": "#22d3ee","on-primary": "#1e1b4b",
+        "secondary-container": "#2563eb","inverse-on-surface": "#0f172a",
+        "surface": "#060A16","on-surface-variant": "#94a3b8",
+        "secondary-fixed-dim": "#60a5fa","tertiary-fixed": "#cffafe",
+        "on-surface": "#f8fafc","surface-bright": "#1e293b","secondary-fixed": "#dbeafe"
+      },
+      borderRadius: { "DEFAULT": "0.5rem","lg": "0.75rem","xl": "1rem","full": "9999px" },
+      spacing: {
+        "container-padding-desktop": "40px","stack-sm": "12px","stack-md": "24px",
+        "base": "8px","gutter": "16px","container-padding-mobile": "20px","stack-lg": "48px"
+      },
+      fontFamily: {
+        "display": ["Inter"],"label-mono": ["JetBrains Mono"],"body-sm": ["Inter"],
+        "headline-lg": ["Inter"],"title-md": ["Inter"],"body-lg": ["Inter"],"headline-lg-mobile": ["Inter"]
+      }
+    }
+  }
+}
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { background-color: #060A16; color: #f8fafc; font-family: 'Inter', sans-serif; overflow-x: hidden; min-height: 100dvh; }
+
+  .glass-surface {
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glass-card {
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(10, 15, 30, 0.55);
+  }
+  .glass-modal {
+    background: rgba(10, 15, 30, 0.95);
+    backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 50px rgba(99, 102, 241, 0.15);
+  }
+
+  .hero-gradient { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); box-shadow: 0 8px 32px rgba(79, 70, 229, 0.3); }
+
+  .ambient-glow-purple { box-shadow: 0 0 50px -10px rgba(99, 102, 241, 0.25); }
+  .lent-glow { box-shadow: 0 0 12px rgba(34, 211, 238, 0.2); }
+  .borrowed-glow { box-shadow: 0 0 12px rgba(248, 113, 113, 0.2); }
+
+  .animate-blob { animation: blob 8s infinite; }
+  .animation-delay-2000 { animation-delay: 2.5s; }
+  .animation-delay-4000 { animation-delay: 5s; }
+  @keyframes blob {
+    0%   { transform: translate(0,0) scale(1); }
+    33%  { transform: translate(40px,-40px) scale(1.15); }
+    66%  { transform: translate(-30px,30px) scale(0.9); }
+    100% { transform: translate(0,0) scale(1); }
+  }
+
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+
+  .glow-hover:focus-within { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.35); }
+  input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4); }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 10px; }
+
+  .page { display: none; animation: fadeIn 0.25s ease-out; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .nav-item.nav-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), transparent); color: #818cf8; border-left: 4px solid #818cf8; }
+  .nav-item { border-left: 4px solid transparent; transition: all 0.25s; }
+  .bottom-nav-item.nav-active { color: #818cf8; }
+  .bottom-nav-item { color: #94a3b8; transition: color 0.2s; }
+
+  .cat-chip { cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+  .cat-chip.selected { border-color: #818cf8; background: rgba(99, 102, 241, 0.15); }
+
+  #app-loader {
+    position: fixed; inset: 0; background: #060A16; z-index: 9999;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  }
+  .loader-ring { width: 44px; height: 44px; border-radius: 50%; border: 3px solid rgba(99, 102, 241, 0.15); border-top-color: #818cf8; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+
+  .card-hover { transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -10px rgba(99,102,241,0.15); }
+</style>
+</head>
+
+<body>
+
+<!-- APP LOADER -->
+<div id="app-loader">
+  <div class="loader-ring"></div>
+  <p class="text-on-surface-variant text-sm font-label-mono animate-pulse">Initializing PocketPal AI...</p>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(15,23,42,0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px 20px; color: #f8fafc; font-size: 14px; z-index: 9999; opacity: 0; transition: all 0.3s ease; pointer-events: none; white-space: nowrap;"></div>
+
+<!-- AUTH SECTION -->
+<div id="auth-section" style="display:none">
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[130px] rounded-full animate-blob"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary-container/10 blur-[130px] rounded-full animate-blob animation-delay-2000"></div>
+  </div>
+
+  <main class="relative z-10 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-[420px]">
+      <!-- Branding -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 hero-gradient rounded-2xl mb-4 shadow-xl">
+          <span class="material-symbols-outlined text-3xl text-white">account_balance_wallet</span>
+        </div>
+        <h1 class="text-3xl font-extrabold bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent tracking-tight">PocketPal AI</h1>
+        <p class="text-on-surface-variant text-sm mt-1">AI-Powered Wealth &amp; Finance Partner</p>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="login-form" class="glass-card rounded-3xl p-8 space-y-5">
+        <h2 class="text-xl font-bold text-on-surface">Welcome Back</h2>
+        <p class="text-on-surface-variant text-xs -mt-3">Log in using your account credentials</p>
+
+        <div class="space-y-3">
+          <div class="glow-hover border border-white/10 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-3">
+              <span class="material-symbols-outlined text-on-surface-variant text-xl">mail</span>
+              <input id="login-email" type="email" placeholder="Email address"
+                class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 text-sm outline-none"/>
+            </div>
+          </div>
+          <div class="glow-hover border border-white/10 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-3">
+              <span class="material-symbols-outlined text-on-surface-variant text-xl">lock</span>
+              <input id="login-password" type="password" placeholder="Password"
+                class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 text-sm outline-none"/>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="handleLogin()" id="login-btn"
+          class="w-full hero-gradient text-white font-semibold py-3 rounded-xl hover:opacity-95 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-xl">login</span> Sign In
+        </button>
+
+        <p class="text-center text-xs text-on-surface-variant">
+          Don't have an account?
+          <button onclick="showSignup()" class="text-primary font-semibold hover:underline ml-1">Create one</button>
+        </p>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div id="signup-form" class="glass-card rounded-3xl p-8 space-y-5 hidden">
+        <h2 class="text-xl font-bold text-on-surface">Create Account</h2>
+        <p class="text-on-surface-variant text-xs -mt-3">Register your new security profile</p>
+
+        <div class="space-y-3">
+          <div class="glow-hover border border-white/10 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-3">
+              <span class="material-symbols-outlined text-on-surface-variant text-xl">person</span>
+              <input id="signup-name" type="text" placeholder="Full name"
+                class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 text-sm outline-none"/>
+            </div>
+          </div>
+          <div class="glow-hover border border-white/10 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-3">
+              <span class="material-symbols-outlined text-on-surface-variant text-xl">mail</span>
+              <input id="signup-email" type="email" placeholder="Email address"
+                class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 text-sm outline-none"/>
+            </div>
+          </div>
+          <div class="glow-hover border border-white/10 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-3">
+              <span class="material-symbols-outlined text-on-surface-variant text-xl">lock</span>
+              <input id="signup-password" type="password" placeholder="Choose Password (min. 6 chars)"
+                class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 text-sm outline-none"/>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="handleSignup()" id="signup-btn"
+          class="w-full hero-gradient text-white font-semibold py-3 rounded-xl hover:opacity-95 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-xl">person_add</span> Register
+        </button>
+
+        <p class="text-center text-xs text-on-surface-variant">
+          Already have an account?
+          <button onclick="showLogin()" class="text-primary font-semibold hover:underline ml-1">Sign in</button>
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MAIN APP SECTION -->
+<div id="app-section" style="display:none">
+  <!-- Top App Bar -->
+  <header class="fixed top-0 w-full z-50 bg-surface/50 backdrop-blur-xl border-b border-white/5 shadow-lg">
+    <div class="flex items-center justify-between px-6 h-16 w-full max-w-7xl mx-auto">
+      <div class="flex items-center gap-3">
+        <button id="mobile-menu-btn" class="md:hidden text-on-surface-variant hover:text-primary mr-1" onclick="toggleMobileSidebar()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <span class="material-symbols-outlined text-primary text-2xl">account_balance_wallet</span>
+        <h1 class="text-lg font-bold bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent">PocketPal AI</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-on-surface-variant text-xs hidden sm:block font-medium" id="header-greeting">Welcome back!</span>
+        <div class="h-9 w-9 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center cursor-pointer active:scale-95 transition-transform" onclick="showPage('settings')">
+          <span class="material-symbols-outlined text-primary text-lg">person</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-black/70 z-30 md:hidden hidden" onclick="closeMobileSidebar()"></div>
+
+  <!-- Side Navigation -->
+  <nav id="sidebar" class="flex flex-col pt-20 gap-1 fixed left-0 top-0 h-full w-64 z-40 bg-surface-container-low/80 backdrop-blur-xl border-r border-white/5 shadow-2xl transition-transform duration-300 -translate-x-full md:translate-x-0">
+    <div class="px-6 py-4 mb-2 border-b border-white/5">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-primary text-xl">person</span>
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-primary truncate" id="sidebar-name">User</p>
+          <p class="text-[10px] font-label-mono text-tertiary">PocketPal Elite AI</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation links -->
+    <a onclick="showPage('dashboard')" class="nav-item flex items-center gap-4 text-on-surface-variant px-6 py-3.5 cursor-pointer hover:bg-white/5" data-page="dashboard">
+      <span class="material-symbols-outlined">grid_view</span><span class="text-sm font-medium">Dashboard</span>
+    </a>
+    <a onclick="showPage('analytics')" class="nav-item flex items-center gap-4 text-on-surface-variant px-6 py-3.5 cursor-pointer hover:bg-white/5" data-page="analytics">
+      <span class="material-symbols-outlined">query_stats</span><span class="text-sm font-medium">Analytics &amp; Budgets</span>
+    </a>
+    <a onclick="showPage('expenses')" class="nav-item flex items-center gap-4 text-on-surface-variant px-6 py-3.5 cursor-pointer hover:bg-white/5" data-page="expenses">
+      <span class="material-symbols-outlined">receipt_long</span><span class="text-sm font-medium">Expenses</span>
+    </a>
+    <a onclick="showPage('debt')" class="nav-item flex items-center gap-4 text-on-surface-variant px-6 py-3.5 cursor-pointer hover:bg-white/5" data-page="debt">
+      <span class="material-symbols-outlined">payments</span><span class="text-sm font-medium">Debt Tracker</span>
+    </a>
+    <a onclick="showPage('settings')" class="nav-item flex items-center gap-4 text-on-surface-variant px-6 py-3.5 cursor-pointer hover:bg-white/5" data-page="settings">
+      <span class="material-symbols-outlined">settings</span><span class="text-sm font-medium">Settings &amp; Tools</span>
+    </a>
+
+    <!-- Logout -->
+    <div class="mt-auto px-6 py-4 border-t border-white/5">
+      <button onclick="handleLogout()" class="flex items-center gap-3 text-error hover:bg-error/10 w-full rounded-xl px-3 py-2.5 transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-lg">logout</span>
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="pt-20 pb-24 px-5 md:pl-72 md:pr-10 max-w-7xl mx-auto">
+
+    <!-- PAGE: DASHBOARD -->
+    <div id="page-dashboard" class="page active space-y-6">
+      
+      <!-- Top Overview Row -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Hero Balance Card -->
+        <div class="hero-gradient rounded-[2rem] p-8 relative overflow-hidden lg:col-span-2 ambient-glow-purple flex flex-col justify-between min-h-[220px]">
+          <div class="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+          <div class="absolute bottom-0 right-0 p-4 opacity-15">
+            <span class="material-symbols-outlined text-[100px]">account_balance_wallet</span>
+          </div>
+          
+          <div class="relative z-10">
+            <p class="text-white/80 font-label-mono uppercase tracking-widest text-[10px] mb-1">Total Spending (This Month)</p>
+            <h2 class="font-bold text-3xl md:text-4xl text-white font-mono" id="dash-total-expenses">₹0.00</h2>
+          </div>
+
+          <div class="relative z-10 flex gap-3 flex-wrap mt-6">
+            <button onclick="openExpenseModal()" class="bg-white text-primary hover:bg-white/90 px-4 py-2 rounded-xl flex items-center gap-2 transition-all active:scale-95 font-semibold text-xs shadow-md">
+              <span class="material-symbols-outlined text-sm font-bold">add</span> Add Expense
+            </button>
+            <button onclick="showPage('debt');openDebtModal()" class="bg-black/20 hover:bg-black/35 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2 transition-all active:scale-95 text-white font-semibold text-xs">
+              <span class="material-symbols-outlined text-sm">handshake</span> Record Debt
+            </button>
+            <button onclick="triggerPdfReportDownload()" class="bg-white/15 hover:bg-white/25 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2 transition-all active:scale-95 text-white font-semibold text-xs">
+              <span class="material-symbols-outlined text-sm">download</span> PDF Statement
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Health Score Card -->
+        <div class="glass-surface p-6 rounded-[2rem] flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[220px]">
+          <h4 class="text-xs font-label-mono text-on-surface-variant uppercase tracking-wider mb-2">Financial Health Score</h4>
+          
+          <!-- Visual Circle Gauge -->
+          <div class="relative flex items-center justify-center w-28 h-28 mb-2">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent"/>
+              <circle id="health-score-circle" cx="50" cy="50" r="40" stroke="#818cf8" stroke-width="8" fill="transparent"
+                stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000 ease-out"/>
+            </svg>
+            <div class="absolute text-center">
+              <span id="health-score-num" class="text-2xl font-extrabold font-mono text-on-surface">0</span>
+              <span class="text-xs text-on-surface-variant block font-semibold" id="health-score-grade">-</span>
+            </div>
+          </div>
+          <p id="health-score-tip" class="text-on-surface-variant text-[11px] leading-tight max-w-[200px] h-6 overflow-hidden text-ellipsis">Score auto-recalculates dynamically based on budgets.</p>
+        </div>
+
+      </section>
+
+      <!-- Sub Metric Cards -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-surface p-5 rounded-2xl card-hover">
+          <p class="text-on-surface-variant text-xs mb-1">Savings Goal Progress</p>
+          <h3 class="text-xl font-bold text-on-surface font-mono" id="dash-savings-tracker">₹0.00</h3>
+          <p class="text-[10px] text-tertiary mt-0.5" id="dash-savings-ratio">0% Savings Ratio</p>
+        </div>
+        <div class="glass-surface p-5 rounded-2xl card-hover">
+          <p class="text-on-surface-variant text-xs mb-1">Active Budget Limits</p>
+          <h3 class="text-xl font-bold text-on-surface font-mono" id="dash-active-budgets">0 set</h3>
+          <p class="text-[10px] text-on-surface-variant mt-0.5" id="dash-budget-warning">Within safe limit thresholds</p>
+        </div>
+        <div class="glass-surface p-5 rounded-2xl card-hover relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-12 h-12 bg-error/5 blur-lg"></div>
+          <p class="text-on-surface-variant text-xs mb-1">Total Outstanding Debt</p>
+          <h3 class="text-xl font-bold text-error font-mono" id="dash-borrowed-card">₹0.00</h3>
+          <p class="text-[10px] text-on-surface-variant mt-0.5">Repayments pending</p>
+        </div>
+        <div class="glass-surface p-5 rounded-2xl card-hover relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-12 h-12 bg-tertiary/5 blur-lg"></div>
+          <p class="text-on-surface-variant text-xs mb-1">Receivables (Lent)</p>
+          <h3 class="text-xl font-bold text-tertiary font-mono" id="dash-lent-card">₹0.00</h3>
+          <p class="text-[10px] text-on-surface-variant mt-0.5">Owed back to you</p>
+        </div>
+      </section>
+
+      <!-- ML Prediction Card -->
+      <section class="glass-surface p-6 rounded-3xl relative overflow-hidden border border-primary/10">
+        <div class="absolute -right-16 -bottom-16 w-36 h-36 bg-primary/10 rounded-full blur-2xl"></div>
+        <div class="flex items-center gap-3 mb-3">
+          <span class="material-symbols-outlined text-primary text-xl">insights</span>
+          <h4 class="text-sm font-semibold text-on-surface">Predictive Expense Forecast (AI Model)</h4>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 space-y-2">
+            <p class="text-on-surface-variant text-xs leading-relaxed" id="ml-prediction-msg">
+              Loading machine learning spending predictions...
+            </p>
+            <div id="ml-category-predictions" class="flex flex-wrap gap-2 pt-1">
+              <!-- Inline Category Forecast Badges -->
+            </div>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-4 flex flex-col justify-center text-center">
+            <p class="text-[10px] text-on-surface-variant font-label-mono uppercase">Predicted Next Month Spend</p>
+            <p class="text-2xl font-bold text-primary font-mono mt-1" id="ml-predicted-total">₹0.00</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Two Column Layout: Recent Transactions & Debt List -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Recent Transactions (2 columns) -->
+        <div class="lg:col-span-2 space-y-3">
+          <div class="flex justify-between items-center px-1">
+            <h4 class="text-sm font-semibold text-on-surface">Recent Transactions</h4>
+            <button onclick="showPage('expenses')" class="text-primary text-xs font-label-mono hover:underline">View All</button>
+          </div>
+          <div id="dash-recent-list" class="glass-surface rounded-3xl divide-y divide-white/5 overflow-hidden">
+            <div class="p-6 text-center text-on-surface-variant text-xs">No transactions found.</div>
+          </div>
+        </div>
+
+        <!-- Pending Repayments (1 column) -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center px-1">
+            <h4 class="text-sm font-semibold text-on-surface">Pending Debt Repayments</h4>
+            <button onclick="showPage('debt')" class="text-primary text-xs font-label-mono hover:underline">Manage</button>
+          </div>
+          <div id="dash-pending-list" class="glass-surface p-4 rounded-3xl space-y-2.5">
+            <p class="text-on-surface-variant text-xs text-center py-4">No pending repayments 🎉</p>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- PAGE: EXPENSES -->
+    <div id="page-expenses" class="page space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-on-surface">Expenses Ledger</h2>
+          <p class="text-xs text-on-surface-variant">Add, filter, search, and manage transactions</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="openExpenseModal()" class="hero-gradient text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 text-xs active:scale-95 transition-transform shadow-md">
+            <span class="material-symbols-outlined text-base">add</span> Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Filters Container -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+        <div class="md:col-span-2 flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+          <span class="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+          <input id="expense-search-input" oninput="searchExpenses()" type="text" placeholder="Search by description..." class="bg-transparent flex-1 text-xs outline-none"/>
+        </div>
+        <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+          <span class="material-symbols-outlined text-on-surface-variant text-lg">event</span>
+          <input id="expense-filter-date" onchange="renderExpenses()" type="month" class="bg-transparent flex-1 text-xs outline-none [color-scheme:dark]"/>
+        </div>
+        <button onclick="clearExpenseFilters()" class="text-xs text-on-surface-variant hover:text-primary transition-colors text-center font-semibold">
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Category Filter Scroll -->
+      <div class="flex gap-2 overflow-x-auto pb-1.5 scrollbar-hide border-b border-white/5">
+        <button onclick="filterExpenses('all')" class="cat-filter-btn selected flex-shrink-0 px-4 py-1.5 rounded-full border border-white/10 text-xs font-label-mono transition-all" data-cat="all">All</button>
+        <button onclick="filterExpenses('Food')" class="cat-filter-btn flex-shrink-0 px-4 py-1.5 rounded-full border border-white/5 text-xs font-label-mono text-on-surface-variant transition-all" data-cat="Food">🍔 Food</button>
+        <button onclick="filterExpenses('Travel')" class="cat-filter-btn flex-shrink-0 px-4 py-1.5 rounded-full border border-white/5 text-xs font-label-mono text-on-surface-variant transition-all" data-cat="Travel">✈️ Travel</button>
+        <button onclick="filterExpenses('Shopping')" class="cat-filter-btn flex-shrink-0 px-4 py-1.5 rounded-full border border-white/5 text-xs font-label-mono text-on-surface-variant transition-all" data-cat="Shopping">🛍️ Shopping</button>
+        <button onclick="filterExpenses('Recharge')" class="cat-filter-btn flex-shrink-0 px-4 py-1.5 rounded-full border border-white/5 text-xs font-label-mono text-on-surface-variant transition-all" data-cat="Recharge">📱 Recharge</button>
+        <button onclick="filterExpenses('Petrol')" class="cat-filter-btn flex-shrink-0 px-4 py-1.5 rounded-full border border-white/5 text-xs font-label-mono text-on-surface-variant transition-all" data-cat="Petrol">⛽ Petrol</button>
+        <button onclick="filterExpenses('Others')" class="cat-filter-btn flex-shrink-0 px-4 py-1.5 rounded-full border border-white/5 text-xs font-label-mono text-on-surface-variant transition-all" data-cat="Others">📦 Others</button>
+      </div>
+
+      <!-- Expenses List -->
+      <div id="expenses-list" class="glass-surface rounded-3xl divide-y divide-white/5 overflow-hidden">
+        <div class="p-8 text-center text-on-surface-variant text-xs">No transactions recorded. Click Add to log one!</div>
+      </div>
+    </div>
+
+    <!-- PAGE: ANALYTICS & BUDGETS -->
+    <div id="page-analytics" class="page space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-on-surface">Analytics &amp; Budgets</h2>
+        <p class="text-xs text-on-surface-variant">Visualise breakdowns, monitor spending indices, and enforce limits</p>
+      </div>
+
+      <!-- Month Selector & Actions -->
+      <div class="flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex gap-2 items-center">
+          <span class="text-xs text-on-surface-variant">View Month:</span>
+          <select id="analytics-month" onchange="renderAnalytics()" class="bg-surface-container border border-white/10 rounded-xl px-3 py-1.5 text-on-surface text-xs font-semibold">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <button onclick="openBudgetModal()" class="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all">
+          Configure Budget Limits
+        </button>
+      </div>
+
+      <!-- Charts Layout Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Category Doughnut -->
+        <div class="glass-surface p-6 rounded-3xl flex flex-col justify-between">
+          <h4 class="text-sm font-semibold text-on-surface mb-4">Spending by Category</h4>
+          <div class="flex items-center justify-center relative" style="height:250px">
+            <canvas id="chart-pie"></canvas>
+          </div>
+        </div>
+
+        <!-- Monthly Trends Bar -->
+        <div class="glass-surface p-6 rounded-3xl flex flex-col justify-between">
+          <h4 class="text-sm font-semibold text-on-surface mb-4">Monthly Expenses Trend</h4>
+          <div style="height:250px">
+            <canvas id="chart-bar"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combined Category Breakdown & Budgets progress -->
+      <div class="glass-surface p-6 rounded-3xl space-y-4">
+        <h4 class="text-sm font-semibold text-on-surface">Category Spending &amp; Budget Limit Progress</h4>
+        <div id="analytics-breakdown" class="space-y-4">
+          <p class="text-on-surface-variant text-xs text-center py-4">Add transactions to generate interactive gauges.</p>
+        </div>
+      </div>
+
+      <!-- Debts Dashboard Analytics -->
+      <div class="glass-surface p-6 rounded-3xl">
+        <h4 class="text-sm font-semibold text-on-surface mb-4">Debt Settlement Index</h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="debt-analytics-grid">
+          <div class="bg-white/5 rounded-2xl p-4 text-center">
+            <p class="text-[10px] text-on-surface-variant mb-1 font-label-mono uppercase">Total Borrowed</p>
+            <p class="text-lg font-bold text-error font-mono" id="an-borrowed">₹0.00</p>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-4 text-center">
+            <p class="text-[10px] text-on-surface-variant mb-1 font-label-mono uppercase">Total Lent</p>
+            <p class="text-lg font-bold text-tertiary font-mono" id="an-lent">₹0.00</p>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-4 text-center">
+            <p class="text-[10px] text-on-surface-variant mb-1 font-label-mono uppercase">Pending Records</p>
+            <p class="text-lg font-bold text-primary font-mono" id="an-pending">0</p>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-4 text-center">
+            <p class="text-[10px] text-on-surface-variant mb-1 font-label-mono uppercase">Settled Debts</p>
+            <p class="text-lg font-bold text-on-surface font-mono" id="an-settled">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: DEBT TRACKER -->
+    <div id="page-debt" class="page space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-on-surface">Debt &amp; Loan Registry</h2>
+          <p class="text-xs text-on-surface-variant">Keep record of funds borrowed or lent out</p>
+        </div>
+        <button onclick="openDebtModal()" class="hero-gradient text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 text-xs active:scale-95 transition-transform shadow-md">
+          <span class="material-symbols-outlined text-base">add</span> Add Entry
+        </button>
+      </div>
+
+      <!-- Debt Totals -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="glass-surface p-5 rounded-2xl borrowed-glow">
+          <p class="text-[10px] text-on-surface-variant mb-1 font-label-mono uppercase">YOU OWE (DEBT)</p>
+          <p class="text-2xl font-bold text-error font-mono" id="debt-owe-total">₹0.00</p>
+        </div>
+        <div class="glass-surface p-5 rounded-2xl lent-glow">
+          <p class="text-[10px] text-on-surface-variant mb-1 font-label-mono uppercase">OWED TO YOU (RECEIVABLE)</p>
+          <p class="text-2xl font-bold text-tertiary font-mono" id="debt-owed-total">₹0.00</p>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="flex gap-2">
+        <button onclick="filterDebt('all')" class="debt-tab-btn selected px-4 py-1.5 rounded-xl text-xs font-semibold transition-all" data-tab="all">All</button>
+        <button onclick="filterDebt('pending')" class="debt-tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition-all text-on-surface-variant" data-tab="pending">Pending</button>
+        <button onclick="filterDebt('paid')" class="debt-tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition-all text-on-surface-variant" data-tab="paid">Paid / Settled</button>
+      </div>
+
+      <!-- Debt List -->
+      <div id="debt-list" class="space-y-3">
+        <div class="glass-surface rounded-3xl p-8 text-center text-on-surface-variant text-xs">
+          No records. Log credit statements to track!
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: SETTINGS & TOOLS -->
+    <div id="page-settings" class="page space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-on-surface">Configuration &amp; Integrations</h2>
+        <p class="text-xs text-on-surface-variant">Update credentials, upload statements, and set income brackets</p>
+      </div>
+
+      <!-- Income Settings -->
+      <div class="glass-surface p-6 rounded-3xl space-y-4">
+        <h3 class="text-sm font-semibold text-on-surface">Salary &amp; Monthly Income Bracket</h3>
+        <p class="text-xs text-on-surface-variant">Used to evaluate Financial Health Score indices and savings ratios.</p>
+        <div class="flex gap-3 max-w-sm">
+          <div class="flex-1 border border-white/10 rounded-xl overflow-hidden glow-hover">
+            <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+              <span class="material-symbols-outlined text-primary text-lg">currency_rupee</span>
+              <input id="income-amount-setting" type="number" placeholder="Income (e.g. 50000)"
+                class="bg-transparent flex-1 text-on-surface text-sm outline-none font-bold font-mono"/>
+            </div>
+          </div>
+          <button onclick="saveMonthlyIncome()" class="hero-gradient text-white px-5 rounded-xl text-xs font-semibold active:scale-95 transition-transform">
+            Save
+          </button>
+        </div>
+      </div>
+
+      <!-- CSV Statement Uploader -->
+      <div class="glass-surface p-6 rounded-3xl space-y-4 border border-dashed border-primary/20">
+        <div>
+          <h3 class="text-sm font-semibold text-on-surface">Bank Statement CSV Upload</h3>
+          <p class="text-xs text-on-surface-variant mt-1">Upload banking statement CSVs. Transactions are parsed, auto-categorized by AI rules, and loaded into your database.</p>
+        </div>
+        
+        <!-- Drag and drop zone -->
+        <div id="csv-drop-zone" class="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center cursor-pointer hover:border-primary/45 transition-colors group">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-primary transition-colors mb-2">upload_file</span>
+          <p class="text-xs font-medium text-on-surface">Click to select or drag &amp; drop your CSV file here</p>
+          <p class="text-[10px] text-on-surface-variant mt-1">Headers required: Date, Description, Amount (parsed debits only)</p>
+          <input type="file" id="csv-file-input" class="hidden" accept=".csv" onchange="handleCsvFileSelected(event)"/>
+        </div>
+        
+        <!-- CSV Upload processing status -->
+        <div id="csv-upload-status" class="hidden flex items-center justify-center gap-2 p-3 bg-white/5 rounded-xl text-xs text-primary font-medium animate-pulse">
+          <span class="loader-ring" style="width:16px;height:16px;border-width:2px"></span>
+          <span>Parsing and auto-categorizing bank records. Please wait...</span>
+        </div>
+      </div>
+
+      <!-- PDF Download Tools -->
+      <div class="glass-surface p-6 rounded-3xl space-y-4">
+        <h3 class="text-sm font-semibold text-on-surface">Export Financial Statements</h3>
+        <p class="text-xs text-on-surface-variant">Compile and download a professional PDF summary, category metrics, and budget alerts for any calendar month.</p>
+        <div class="flex flex-wrap gap-3 items-center">
+          <input id="report-download-month" type="month" class="bg-surface-container border border-white/10 rounded-xl px-4 py-2 text-xs font-semibold [color-scheme:dark] outline-none"/>
+          <button onclick="triggerPdfReportDownload('report-download-month')" class="hero-gradient text-white px-5 py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-transform flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">download</span> Download PDF Invoice
+          </button>
+        </div>
+      </div>
+
+      <!-- Connection Status Info -->
+      <div class="glass-surface p-6 rounded-3xl space-y-3">
+        <h3 class="text-sm font-semibold text-on-surface">Cloud Integration Details</h3>
+        <p class="text-xs text-on-surface-variant">System security parameters and active API credentials.</p>
+        <div id="storage-mode-badge" class="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full text-[10px] font-label-mono border border-white/5">
+          <span class="material-symbols-outlined text-sm text-primary">cloud</span>
+          <span class="text-on-surface-variant">Checking connection...</span>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="glass-surface p-6 rounded-3xl border border-error/15 space-y-3">
+        <h3 class="text-sm font-semibold text-error">Database Sanitation</h3>
+        <p class="text-xs text-on-surface-variant">This will clear all transactions, records, and parameters in LocalStorage (if in offline mode). Remote database deletions must be done via SQL shell.</p>
+        <button onclick="clearAllData()" class="px-5 py-2 border border-error/50 text-error rounded-xl text-xs font-semibold hover:bg-error/10 transition-colors active:scale-95">
+          Clear Offline Storage
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Floating Add Button -->
+  <button onclick="handleFAB()" class="fixed bottom-24 right-5 w-12 h-12 hero-gradient rounded-2xl shadow-xl flex items-center justify-center text-white z-50 active:scale-90 transition-transform md:bottom-8 md:right-10">
+    <span class="material-symbols-outlined text-2xl font-bold">add</span>
+  </button>
+
+  <!-- Bottom Navigation (Mobile Viewports) -->
+  <nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface-container/75 backdrop-blur-lg border-t border-white/5 shadow-xl">
+    <div class="flex justify-around items-center h-16 px-1">
+      <button onclick="showPage('dashboard')" class="bottom-nav-item flex flex-col items-center justify-center px-2 py-1 transition-all active:scale-90 min-w-[55px]" data-page="dashboard">
+        <span class="material-symbols-outlined text-lg">dashboard</span>
+        <span class="text-[9px] font-medium mt-0.5">Home</span>
+      </button>
+      <button onclick="showPage('analytics')" class="bottom-nav-item flex flex-col items-center justify-center px-2 py-1 transition-all active:scale-90 min-w-[55px]" data-page="analytics">
+        <span class="material-symbols-outlined text-lg">insights</span>
+        <span class="text-[9px] font-medium mt-0.5">Charts</span>
+      </button>
+      <button onclick="showPage('expenses')" class="bottom-nav-item flex flex-col items-center justify-center px-2 py-1 transition-all active:scale-90 min-w-[55px]" data-page="expenses">
+        <span class="material-symbols-outlined text-lg">receipt_long</span>
+        <span class="text-[9px] font-medium mt-0.5">Ledger</span>
+      </button>
+      <button onclick="showPage('debt')" class="bottom-nav-item flex flex-col items-center justify-center px-2 py-1 transition-all active:scale-90 min-w-[55px]" data-page="debt">
+        <span class="material-symbols-outlined text-lg">handshake</span>
+        <span class="text-[9px] font-medium mt-0.5">Debts</span>
+      </button>
+      <button onclick="showPage('settings')" class="bottom-nav-item flex flex-col items-center justify-center px-2 py-1 transition-all active:scale-90 min-w-[55px]" data-page="settings">
+        <span class="material-symbols-outlined text-lg">settings</span>
+        <span class="text-[9px] font-medium mt-0.5">Tools</span>
+      </button>
+    </div>
+  </nav>
+</div>
+
+<!-- MODALS -->
+
+<!-- Add/Edit Expense -->
+<div id="expense-modal" class="modal-overlay" onclick="closeIfBackdrop(event,'expense-modal')">
+  <div class="glass-modal rounded-3xl p-6 w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-md font-bold text-on-surface" id="expense-modal-title">Add Transaction</h3>
+      <button onclick="closeModal('expense-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Amount -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">AMOUNT (₹) *</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-primary text-xl">currency_rupee</span>
+            <input id="exp-amount" type="number" placeholder="0.00" min="0.01" step="0.01" required
+              class="bg-transparent flex-1 text-on-surface text-lg font-bold font-mono placeholder-on-surface-variant/40 outline-none"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description with Auto Categorization hooks -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">DESCRIPTION *</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-on-surface-variant text-xl">edit</span>
+            <input id="exp-desc" type="text" placeholder="Where did you spend?" required onblur="triggerSmartCategorization()"
+              class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 outline-none text-xs"/>
+          </div>
+        </div>
+        <p class="text-[9px] text-primary/80 mt-1">Leave Category empty for AI Auto-Categorisation on description exit.</p>
+      </div>
+
+      <!-- Category selection -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">CATEGORY *</label>
+        <select id="exp-category" class="w-full bg-surface-container-high border border-white/10 rounded-xl px-3 py-2.5 text-on-surface text-xs font-semibold outline-none focus:border-primary">
+          <option value="Food">🍔 Food</option>
+          <option value="Travel">✈️ Travel</option>
+          <option value="Shopping">🛍️ Shopping</option>
+          <option value="Recharge">📱 Recharge</option>
+          <option value="Petrol">⛽ Petrol</option>
+          <option value="Others" selected>📦 Others</option>
+        </select>
+      </div>
+
+      <!-- Transaction Date -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">TRANSACTION DATE *</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-on-surface-variant text-lg">event</span>
+            <input id="exp-date" type="date" required
+              class="bg-transparent flex-1 text-on-surface outline-none text-xs [color-scheme:dark]"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" id="exp-editing-id" value=""/>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeModal('expense-modal')" class="flex-1 border border-white/10 text-on-surface-variant py-2.5 rounded-xl text-xs font-semibold hover:bg-white/5 transition-colors">
+        Cancel
+      </button>
+      <button onclick="saveExpense()" class="flex-1 hero-gradient text-white py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-transform">
+        Save Transaction
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Debt -->
+<div id="debt-modal" class="modal-overlay" onclick="closeIfBackdrop(event,'debt-modal')">
+  <div class="glass-modal rounded-3xl p-6 w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-md font-bold text-on-surface" id="debt-modal-title">Record Debt</h3>
+      <button onclick="closeModal('debt-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Type selector buttons -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1.5 block uppercase">TRANSACTION DIRECTION</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="selectDebtType('borrowed')" id="type-borrowed" class="py-2.5 rounded-xl text-xs font-semibold border-2 border-error/50 bg-error/10 text-error transition-all">
+            📥 Borrowed (I owe)
+          </button>
+          <button onclick="selectDebtType('lent')" id="type-lent" class="py-2.5 rounded-xl text-xs font-semibold border-2 border-white/10 text-on-surface-variant bg-white/5 transition-all">
+            📤 Lent (They owe)
+          </button>
+        </div>
+        <input type="hidden" id="debt-type" value="borrowed"/>
+      </div>
+
+      <!-- Person Name -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">COUNTERPARTY NAME *</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-on-surface-variant text-xl">person</span>
+            <input id="debt-person" type="text" placeholder="Creditor / Debtor name" required
+              class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 outline-none text-xs"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Amount -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">AMOUNT (₹) *</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-primary text-xl">currency_rupee</span>
+            <input id="debt-amount" type="number" placeholder="0.00" min="0.01" step="0.01" required
+              class="bg-transparent flex-1 text-on-surface text-lg font-bold font-mono placeholder-on-surface-variant/40 outline-none"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description / Note -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">MEMO / DETAILS</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-on-surface-variant text-xl">notes</span>
+            <input id="debt-note" type="text" placeholder="Purpose of this debt"
+              class="bg-transparent flex-1 text-on-surface placeholder-on-surface-variant/40 outline-none text-xs"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Due Date -->
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">EXPECTED SETTLEMENT DATE</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-on-surface-variant text-lg">event</span>
+            <input id="debt-due" type="date"
+              class="bg-transparent flex-1 text-on-surface outline-none text-xs [color-scheme:dark]"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" id="debt-editing-id" value=""/>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeModal('debt-modal')" class="flex-1 border border-white/10 text-on-surface-variant py-2.5 rounded-xl text-xs font-semibold hover:bg-white/5 transition-colors">
+        Cancel
+      </button>
+      <button onclick="saveDebt()" class="flex-1 hero-gradient text-white py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-transform">
+        Save Debt record
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Limits Configure Modal -->
+<div id="budget-modal" class="modal-overlay" onclick="closeIfBackdrop(event,'budget-modal')">
+  <div class="glass-modal rounded-3xl p-6 w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-md font-bold text-on-surface">Edit Budget Limits</h3>
+      <button onclick="closeModal('budget-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">TARGET CATEGORY</label>
+        <select id="budget-category" onchange="onBudgetCategoryChanged()" class="w-full bg-surface-container-high border border-white/10 rounded-xl px-3 py-2.5 text-on-surface text-xs font-semibold outline-none">
+          <option value="Food">🍔 Food</option>
+          <option value="Travel">✈️ Travel</option>
+          <option value="Shopping">🛍️ Shopping</option>
+          <option value="Recharge">📱 Recharge</option>
+          <option value="Petrol">⛽ Petrol</option>
+          <option value="Others">📦 Others</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-[10px] text-on-surface-variant font-label-mono mb-1 block uppercase">MONTHLY LIMIT AMOUNT (₹)</label>
+        <div class="border border-white/10 rounded-xl overflow-hidden glow-hover">
+          <div class="flex items-center gap-2 bg-white/5 px-4 py-2.5">
+            <span class="material-symbols-outlined text-primary text-xl">currency_rupee</span>
+            <input id="budget-limit-amount" type="number" placeholder="0.00" min="0" step="100"
+              class="bg-transparent flex-1 text-on-surface text-lg font-bold font-mono placeholder-on-surface-variant/40 outline-none"/>
+          </div>
+        </div>
+        <p class="text-[9px] text-on-surface-variant mt-1">Set to 0 to disable or delete limit for this category.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeModal('budget-modal')" class="flex-1 border border-white/10 text-on-surface-variant py-2.5 rounded-xl text-xs font-semibold hover:bg-white/5 transition-colors">
+        Cancel
+      </button>
+      <button onclick="saveBudgetLimit()" class="flex-1 hero-gradient text-white py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-transform">
+        Enforce Limit
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="delete-modal" class="modal-overlay" onclick="closeIfBackdrop(event,'delete-modal')">
+  <div class="glass-modal rounded-3xl p-6 w-full max-w-sm text-center" onclick="event.stopPropagation()">
+    <div class="w-14 h-14 rounded-full bg-error/15 border border-error/30 flex items-center justify-center mx-auto mb-3">
+      <span class="material-symbols-outlined text-error text-2xl">delete_forever</span>
+    </div>
+    <h3 class="text-md font-bold text-on-surface mb-1">Delete Entry?</h3>
+    <p class="text-on-surface-variant text-xs mb-5" id="delete-msg">This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button onclick="closeModal('delete-modal')" class="flex-1 border border-white/10 text-on-surface-variant py-2.5 rounded-xl text-xs font-semibold hover:bg-white/5 transition-colors">
+        Cancel
+      </button>
+      <button onclick="confirmDelete()" class="flex-1 bg-error/80 text-white py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-transform">
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CORE APP LOGIC -->
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+   ══════════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://zgnnxujzbjohaovsfuhj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpnbm54dWp6YmpvaGFvdnNmdWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MjA1NzUsImV4cCI6MjA5NTE5NjU3NX0.srCWZrPVScAmd02zAJCmuypsS2aRaZGHLiW7L-kbqks';
+// Set BACKEND_URL to your Render backend URL when deploying to Vercel
+// e.g. const BACKEND_URL = 'https://pocketpal-api.onrender.com';
+const BACKEND_URL = '';  // ← FILL THIS IN after deploying backend to Render
+
+const API_BASE_URL = BACKEND_URL
+  ? BACKEND_URL
+  : (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+    ? 'http://localhost:8000'
+    : window.location.origin);
+
+let sbClient = null;
+let currentUser = null;
+let currentSession = null;
+
+let appState = {
+  expenses: [],
+  debts: [],
+  budgets: [],
+  currentExpenseFilter: 'all',
+  currentDebtFilter: 'all',
+  editingExpenseId: null,
+  editingDebtId: null,
+  deleteCallback: null,
+  monthlyIncome: 50000.0,
+  mlPrediction: null,
+  healthScore: null
+};
+
+let chartPie = null, chartBar = null;
+
+/* ═══════════════════════════════════════════════════════════
+   API UTILS (FastAPI authenticated bridge)
+   ══════════════════════════════════════════════════════════ */
+async function apiCall(endpoint, method = 'GET', body = null, isBlob = false) {
+  const headers = {};
+  if (currentSession?.access_token) {
+    headers['Authorization'] = `Bearer ${currentSession.access_token}`;
+  }
+  
+  const options = { method, headers };
+  if (body) {
+    if (body instanceof FormData) {
+      options.body = body;
+    } else {
+      headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(body);
+    }
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || 'Network request failed');
+    }
+    if (isBlob) {
+      return await res.blob();
+    }
+    return await res.json();
+  } catch (err) {
+    console.error(`API Call failed [${method} ${endpoint}]:`, err);
+    throw err;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SUPABASE CLIENT AUTH
+   ══════════════════════════════════════════════════════════ */
+function initSupabase() {
+  try {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      document.getElementById('storage-mode-badge').innerHTML = `
+        <span class="material-symbols-outlined text-xs text-tertiary">cloud</span>
+        <span class="text-tertiary">Supabase Auth Connected</span>`;
+      return true;
+    }
+  } catch(e) {
+    console.warn('Supabase client error, falling back to LocalStorage Auth', e);
+  }
+  return false;
+}
+
+function showLogin() {
+  document.getElementById('login-form').classList.remove('hidden');
+  document.getElementById('signup-form').classList.add('hidden');
+}
+function showSignup() {
+  document.getElementById('login-form').classList.add('hidden');
+  document.getElementById('signup-form').classList.remove('hidden');
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  if (!email || !password) return showToast('Please enter email and password', 'error');
+
+  setLoading('login-btn', true, 'Verifying credentials...');
+  try {
+    const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+    setLoading('login-btn', false, '');
+    if (error) throw error;
+    
+    currentSession = data.session;
+    currentUser = data.user;
+    showToast('Signed in successfully! 🎉', 'success');
+    await enterApp(currentUser);
+  } catch (err) {
+    setLoading('login-btn', false, '');
+    showToast(err.message || 'Login failed', 'error');
+  }
+}
+
+async function handleSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value.trim();
+  
+  if (!name || !email || !password) return showToast('Please fill all fields', 'error');
+  if (password.length < 6) return showToast('Password must be at least 6 characters', 'error');
+
+  setLoading('signup-btn', true, 'Creating profile...');
+  try {
+    const { data, error } = await sbClient.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: name } }
+    });
+    setLoading('signup-btn', false, '');
+    if (error) throw error;
+    
+    showToast('Registration successful! Please sign in.', 'success');
+    showLogin();
+  } catch (err) {
+    setLoading('signup-btn', false, '');
+    showToast(err.message || 'Registration failed', 'error');
+  }
+}
+
+async function handleLogout() {
+  try {
+    await sbClient.auth.signOut();
+  } catch(e) {}
+  currentUser = null;
+  currentSession = null;
+  document.getElementById('app-section').style.display = 'none';
+  document.getElementById('auth-section').style.display = 'block';
+  showLogin();
+  showToast('Signed out successfully');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APP INITIALIZATION
+   ══════════════════════════════════════════════════════════ */
+async function enterApp(user) {
+  document.getElementById('auth-section').style.display = 'none';
+  document.getElementById('app-section').style.display = 'block';
+
+  const name = user.user_metadata?.full_name || user.email.split('@')[0];
+  document.getElementById('sidebar-name').textContent = name;
+  document.getElementById('header-greeting').textContent = `Hi, ${name.split(' ')[0]}!`;
+  
+  // Load saved monthly income if exists
+  const savedIncome = localStorage.getItem(`pp_income_${user.id}`);
+  if (savedIncome) {
+    appState.monthlyIncome = parseFloat(savedIncome);
+  }
+  document.getElementById('income-amount-setting').value = appState.monthlyIncome;
+
+  document.getElementById('app-loader').style.display = 'flex';
+  try {
+    await refreshData();
+  } catch(e) {
+    console.error("Data loading failed:", e);
+    showToast("Error connecting to backend API.", "error");
+  }
+  document.getElementById('app-loader').style.display = 'none';
+
+  populateMonthSelector();
+  showPage('dashboard');
+  document.addEventListener('mousemove', heroParallax);
+}
+
+async function refreshData() {
+  // Pull from FastAPI Backend API
+  appState.expenses = await apiCall('/api/expenses');
+  appState.debts = await apiCall('/api/debts');
+  appState.budgets = await apiCall('/api/budgets');
+  
+  // Trigger ML predictions and Health score
+  try {
+    appState.mlPrediction = await apiCall('/api/analytics/predict');
+  } catch(e) { console.warn("Failed loading prediction", e); }
+  
+  try {
+    appState.healthScore = await apiCall(`/api/analytics/health-score?income=${appState.monthlyIncome}`);
+  } catch(e) { console.warn("Failed loading health score", e); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPENSES LOGIC
+   ══════════════════════════════════════════════════════════ */
+async function triggerSmartCategorization() {
+  const desc = document.getElementById('exp-desc').value.trim();
+  const catSelect = document.getElementById('exp-category');
+  
+  if (!desc) return;
+  
+  try {
+    const res = await apiCall('/api/expenses/categorize', 'POST', { description: desc });
+    if (res.category && res.category !== "Others") {
+      catSelect.value = res.category;
+      showToast(`AI Suggestion: ${catSelect.options[catSelect.selectedIndex].text}`, 'info');
+    }
+  } catch(e) {}
+}
+
+function openExpenseModal(id = null) {
+  appState.editingExpenseId = id;
+  document.getElementById('expense-modal-title').textContent = id ? 'Edit Transaction' : 'Log Transaction';
+  document.getElementById('exp-editing-id').value = id || '';
+
+  if (id) {
+    const exp = appState.expenses.find(e => e.id === id);
+    if (exp) {
+      document.getElementById('exp-amount').value = exp.amount;
+      document.getElementById('exp-desc').value = exp.description;
+      document.getElementById('exp-category').value = exp.category;
+      document.getElementById('exp-date').value = exp.date;
+    }
+  } else {
+    document.getElementById('exp-amount').value = '';
+    document.getElementById('exp-desc').value = '';
+    document.getElementById('exp-category').value = 'Others';
+    document.getElementById('exp-date').value = new Date().toISOString().slice(0,10);
+  }
+  document.getElementById('expense-modal').classList.add('open');
+}
+
+async function saveExpense() {
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const description = document.getElementById('exp-desc').value.trim();
+  const category = document.getElementById('exp-category').value;
+  const date = document.getElementById('exp-date').value;
+
+  if (!amount || amount <= 0) return showToast('Enter valid positive amount', 'error');
+  if (!description) return showToast('Description is required', 'error');
+  if (!date) return showToast('Date is required', 'error');
+
+  const editId = document.getElementById('exp-editing-id').value;
+  const payload = { amount, description, category, date };
+
+  try {
+    if (editId) {
+      await apiCall(`/api/expenses/${editId}`, 'PUT', payload);
+      showToast('Transaction updated!', 'success');
+    } else {
+      await apiCall('/api/expenses', 'POST', payload);
+      showToast('Transaction logged!', 'success');
+    }
+    closeModal('expense-modal');
+    document.getElementById('app-loader').style.display = 'flex';
+    await refreshData();
+    document.getElementById('app-loader').style.display = 'none';
+    refreshActivePage();
+  } catch (err) {
+    showToast('Failed to save expense entry', 'error');
+  }
+}
+
+function deleteExpense(id) {
+  const exp = appState.expenses.find(e => e.id === id);
+  document.getElementById('delete-msg').textContent = `Delete "${exp?.description || 'this transaction'}"?`;
+  appState.deleteCallback = async () => {
+    try {
+      await apiCall(`/api/expenses/${id}`, 'DELETE');
+      closeModal('delete-modal');
+      showToast('Transaction deleted', 'success');
+      document.getElementById('app-loader').style.display = 'flex';
+      await refreshData();
+      document.getElementById('app-loader').style.display = 'none';
+      refreshActivePage();
+    } catch(e) {
+      showToast('Failed to delete transaction', 'error');
+    }
+  };
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+function renderExpenses() {
+  const filter = appState.currentExpenseFilter;
+  const monthFilter = document.getElementById('expense-filter-date').value;
+  const searchQuery = document.getElementById('expense-search-input').value.trim().toLowerCase();
+  
+  let filtered = appState.expenses;
+  
+  if (filter !== 'all') {
+    filtered = filtered.filter(e => e.category === filter);
+  }
+  if (monthFilter) {
+    filtered = filtered.filter(e => e.date?.startsWith(monthFilter));
+  }
+  if (searchQuery) {
+    filtered = filtered.filter(e => e.description?.toLowerCase().includes(searchQuery));
+  }
+
+  const el = document.getElementById('expenses-list');
+  if (filtered.length === 0) {
+    el.innerHTML = `<div class="p-8 text-center text-on-surface-variant text-xs">No matching transactions found.</div>`;
+    return;
+  }
+
+  el.innerHTML = filtered.map(e => `
+    <div class="flex items-center justify-between p-4 hover:bg-white/5 transition-colors group">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <div class="h-10 w-10 rounded-xl bg-surface-container-highest flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform text-xl">
+          ${catEmoji(e.category)}
+        </div>
+        <div class="min-w-0">
+          <p class="font-semibold text-on-surface text-xs truncate">${esc(e.description)}</p>
+          <p class="text-[10px] text-on-surface-variant font-medium">${e.category} &bull; ${fmtDate(e.date)}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+        <span class="font-mono text-xs font-bold text-on-surface">-${fmt(e.amount)}</span>
+        <button onclick="openExpenseModal('${e.id}')" class="p-1 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all">
+          <span class="material-symbols-outlined text-sm">edit</span>
+        </button>
+        <button onclick="deleteExpense('${e.id}')" class="p-1 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-all">
+          <span class="material-symbols-outlined text-sm">delete</span>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function filterExpenses(cat) {
+  appState.currentExpenseFilter = cat;
+  document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+    const active = btn.dataset.cat === cat;
+    btn.classList.toggle('selected', active);
+    btn.classList.toggle('border-primary/50', active);
+    btn.classList.toggle('text-primary', active);
+    btn.classList.toggle('bg-primary/10', active);
+    btn.classList.toggle('border-white/5', !active);
+    btn.classList.toggle('text-on-surface-variant', !active);
+    btn.classList.toggle('bg-transparent', !active);
+  });
+  renderExpenses();
+}
+
+function searchExpenses() {
+  renderExpenses();
+}
+
+function clearExpenseFilters() {
+  document.getElementById('expense-search-input').value = '';
+  document.getElementById('expense-filter-date').value = '';
+  filterExpenses('all');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DEBT LOGIC
+   ══════════════════════════════════════════════════════════ */
+function openDebtModal(id = null) {
+  appState.editingDebtId = id;
+  document.getElementById('debt-modal-title').textContent = id ? 'Edit Debt Record' : 'Record Debt Entry';
+  document.getElementById('debt-editing-id').value = id || '';
+
+  if (id) {
+    const debt = appState.debts.find(d => d.id === id);
+    if (debt) {
+      document.getElementById('debt-type').value = debt.type;
+      selectDebtType(debt.type);
+      document.getElementById('debt-person').value = debt.person;
+      document.getElementById('debt-amount').value = debt.amount;
+      document.getElementById('debt-note').value = debt.note || '';
+      document.getElementById('debt-due').value = debt.due_date || '';
+    }
+  } else {
+    document.getElementById('debt-type').value = 'borrowed';
+    selectDebtType('borrowed');
+    document.getElementById('debt-person').value = '';
+    document.getElementById('debt-amount').value = '';
+    document.getElementById('debt-note').value = '';
+    document.getElementById('debt-due').value = '';
+  }
+  document.getElementById('debt-modal').classList.add('open');
+}
+
+function selectDebtType(type) {
+  document.getElementById('debt-type').value = type;
+  const borrow = document.getElementById('type-borrowed');
+  const lent = document.getElementById('type-lent');
+  
+  if (type === 'borrowed') {
+    borrow.className = 'py-2.5 rounded-xl text-xs font-semibold border-2 border-error/50 bg-error/10 text-error transition-all';
+    lent.className = 'py-2.5 rounded-xl text-xs font-semibold border-2 border-white/5 text-on-surface-variant bg-white/5 transition-all';
+  } else {
+    borrow.className = 'py-2.5 rounded-xl text-xs font-semibold border-2 border-white/5 text-on-surface-variant bg-white/5 transition-all';
+    lent.className = 'py-2.5 rounded-xl text-xs font-semibold border-2 border-tertiary/50 bg-tertiary/10 text-tertiary transition-all';
+  }
+}
+
+async function saveDebt() {
+  const type = document.getElementById('debt-type').value;
+  const person = document.getElementById('debt-person').value.trim();
+  const amount = parseFloat(document.getElementById('debt-amount').value);
+  const note = document.getElementById('debt-note').value.trim();
+  const due_date = document.getElementById('debt-due').value || null;
+
+  if (!person) return showToast('Counterparty name is required', 'error');
+  if (!amount || amount <= 0) return showToast('Enter valid amount', 'error');
+
+  const editId = document.getElementById('debt-editing-id').value;
+  const payload = { type, person, amount, note, due_date };
+
+  try {
+    if (editId) {
+      await apiCall(`/api/debts/${editId}`, 'PUT', payload);
+      showToast('Debt details updated!', 'success');
+    } else {
+      await apiCall('/api/debts', 'POST', payload);
+      showToast('Debt recorded successfully!', 'success');
+    }
+    closeModal('debt-modal');
+    document.getElementById('app-loader').style.display = 'flex';
+    await refreshData();
+    document.getElementById('app-loader').style.display = 'none';
+    refreshActivePage();
+  } catch (err) {
+    showToast('Failed to record credit log', 'error');
+  }
+}
+
+async function toggleDebtStatus(id) {
+  try {
+    await apiCall(`/api/debts/${id}/toggle-status`, 'PATCH');
+    showToast('Debt status updated!', 'success');
+    document.getElementById('app-loader').style.display = 'flex';
+    await refreshData();
+    document.getElementById('app-loader').style.display = 'none';
+    refreshActivePage();
+  } catch(e) {
+    showToast('Failed to toggle settlement state', 'error');
+  }
+}
+
+function deleteDebt(id) {
+  document.getElementById('delete-msg').textContent = "Delete this debt log?";
+  appState.deleteCallback = async () => {
+    try {
+      await apiCall(`/api/debts/${id}`, 'DELETE');
+      closeModal('delete-modal');
+      showToast('Debt record deleted', 'success');
+      document.getElementById('app-loader').style.display = 'flex';
+      await refreshData();
+      document.getElementById('app-loader').style.display = 'none';
+      refreshActivePage();
+    } catch(e) {
+      showToast('Failed to delete debt', 'error');
+    }
+  };
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+function renderDebt() {
+  const filter = appState.currentDebtFilter;
+  const filtered = filter === 'all' ? appState.debts : appState.debts.filter(d => d.status === filter);
+
+  // Totals pending
+  const owe = appState.debts.filter(d => d.type === 'borrowed' && d.status === 'pending').reduce((s,d)=>s+parseFloat(d.amount),0);
+  const owed = appState.debts.filter(d => d.type === 'lent' && d.status === 'pending').reduce((s,d)=>s+parseFloat(d.amount),0);
+  document.getElementById('debt-owe-total').textContent = fmt(owe);
+  document.getElementById('debt-owed-total').textContent = fmt(owed);
+
+  const el = document.getElementById('debt-list');
+  if (filtered.length === 0) {
+    el.innerHTML = `<div class="glass-surface rounded-3xl p-8 text-center text-on-surface-variant text-xs">No records matching filter parameters.</div>`;
+    return;
+  }
+
+  el.innerHTML = filtered.map(d => {
+    const isLent = d.type === 'lent';
+    const isPaid = d.status === 'paid';
+    const isOverdue = d.due_date && new Date(d.due_date) < new Date() && !isPaid;
+    const color = isLent ? 'tertiary' : 'error';
+    const glowClass = isLent ? 'lent-glow' : 'borrowed-glow';
+    
+    return `
+    <div class="glass-surface rounded-2xl p-4 ${!isPaid ? glowClass : ''} ${isPaid ? 'opacity-55' : ''} border border-white/5">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+          <div class="w-10 h-10 rounded-xl bg-${color}/10 border border-${color}/20 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-${color} text-lg">${isLent ? 'call_made' : 'call_received'}</span>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <p class="font-semibold text-on-surface text-xs">${esc(d.person)}</p>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${isLent ? 'border-tertiary/30 bg-tertiary/10 text-tertiary' : 'border-error/30 bg-error/10 text-error'}">${d.type}</span>
+              ${isPaid ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border border-white/10 bg-white/5 text-on-surface-variant">Settled</span>' : ''}
+              ${isOverdue ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border border-yellow-400/30 bg-yellow-400/10 text-yellow-400">Overdue</span>' : ''}
+            </div>
+            ${d.note ? `<p class="text-[10px] text-on-surface-variant mt-0.5 truncate">${esc(d.note)}</p>` : ''}
+            ${d.due_date ? `<p class="text-[10px] text-on-surface-variant mt-0.5 font-medium">Due: ${fmtDate(d.due_date)}</p>` : ''}
+          </div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <p class="font-mono font-bold text-xs text-${color}">${isLent ? '+' : '-'}${fmt(d.amount)}</p>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3 border-t border-white/5 pt-3">
+        <button onclick="toggleDebtStatus('${d.id}')" class="flex-1 text-[10px] font-bold py-1.5 rounded-lg ${isPaid ? 'bg-white/5 text-on-surface-variant hover:bg-white/10' : 'bg-primary/10 text-primary hover:bg-primary/20'} transition-colors flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-xs">${isPaid ? 'undo' : 'check_circle'}</span>
+          <span>${isPaid ? 'Mark Pending' : 'Mark Settled'}</span>
+        </button>
+        <button onclick="openDebtModal('${d.id}')" class="px-3.5 py-1.5 rounded-lg bg-white/5 text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all">
+          <span class="material-symbols-outlined text-sm">edit</span>
+        </button>
+        <button onclick="deleteDebt('${d.id}')" class="px-3.5 py-1.5 rounded-lg bg-white/5 text-on-surface-variant hover:text-error hover:bg-error/10 transition-all">
+          <span class="material-symbols-outlined text-sm">delete</span>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterDebt(tab) {
+  appState.currentDebtFilter = tab;
+  document.querySelectorAll('.debt-tab-btn').forEach(btn => {
+    const active = btn.dataset.tab === tab;
+    btn.className = active
+      ? 'debt-tab-btn selected px-4 py-1.5 rounded-xl text-xs font-semibold transition-all bg-primary/10 text-primary border border-primary/20 shadow'
+      : 'debt-tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition-all text-on-surface-variant bg-white/5';
+  });
+  renderDebt();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUDGET LIMITS LOGIC
+   ══════════════════════════════════════════════════════════ */
+function openBudgetModal() {
+  onBudgetCategoryChanged();
+  document.getElementById('budget-modal').classList.add('open');
+}
+
+function onBudgetCategoryChanged() {
+  const cat = document.getElementById('budget-category').value;
+  const currentLimitRecord = appState.budgets.find(b => b.category === cat);
+  document.getElementById('budget-limit-amount').value = currentLimitRecord ? currentLimitRecord.limit_amount : '';
+}
+
+async function saveBudgetLimit() {
+  const category = document.getElementById('budget-category').value;
+  const limit_amount = parseFloat(document.getElementById('budget-limit-amount').value);
+
+  if (isNaN(limit_amount) || limit_amount < 0) {
+    return showToast('Please enter a valid limit amount', 'error');
+  }
+
+  try {
+    if (limit_amount === 0) {
+      // Delete budget limit
+      await apiCall(`/api/budgets/${category}`, 'DELETE');
+      showToast(`Budget limit for ${category} deleted.`, 'info');
+    } else {
+      await apiCall('/api/budgets', 'POST', { category, limit_amount });
+      showToast(`Budget limit for ${category} updated to ${fmt(limit_amount)}!`, 'success');
+    }
+    
+    closeModal('budget-modal');
+    document.getElementById('app-loader').style.display = 'flex';
+    await refreshData();
+    document.getElementById('app-loader').style.display = 'none';
+    refreshActivePage();
+  } catch(e) {
+    showToast('Failed to enforce budget parameters', 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MONTHLY INCOME SETTING
+   ══════════════════════════════════════════════════════════ */
+function saveMonthlyIncome() {
+  const amt = parseFloat(document.getElementById('income-amount-setting').value);
+  if (isNaN(amt) || amt <= 0) return showToast('Enter a valid monthly income', 'error');
+  
+  appState.monthlyIncome = amt;
+  localStorage.setItem(`pp_income_${currentUser.id}`, amt);
+  showToast('Monthly income bracket updated!', 'success');
+  
+  // Reload score
+  document.getElementById('app-loader').style.display = 'flex';
+  apiCall(`/api/analytics/health-score?income=${amt}`)
+    .then(res => {
+      appState.healthScore = res;
+      renderDashboard();
+    })
+    .finally(() => {
+      document.getElementById('app-loader').style.display = 'none';
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CSV FILE UPLOAD LOGIC
+   ══════════════════════════════════════════════════════════ */
+// Configure drag/drop zone hooks
+const dropZone = document.getElementById('csv-drop-zone');
+if (dropZone) {
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-primary/60', 'bg-primary/5');
+  });
+  
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-primary/60', 'bg-primary/5');
+  });
+  
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary/60', 'bg-primary/5');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      uploadCsvFile(files[0]);
+    }
+  });
+  
+  dropZone.addEventListener('click', () => {
+    document.getElementById('csv-file-input').click();
+  });
+}
+
+function handleCsvFileSelected(e) {
+  const file = e.target.files[0];
+  if (file) uploadCsvFile(file);
+}
+
+async function uploadCsvFile(file) {
+  if (!file.name.toLowerCase().endswith && !file.name.toLowerCase().endsWith('.csv')) {
+    return showToast('Selected file must be a CSV bank statement', 'error');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const statusEl = document.getElementById('csv-upload-status');
+  statusEl.classList.remove('hidden');
+  
+  try {
+    const res = await apiCall('/api/upload-csv', 'POST', formData);
+    statusEl.classList.add('hidden');
+    
+    if (res.status === 'success') {
+      showToast(res.message || 'Statement uploaded!', 'success');
+      document.getElementById('app-loader').style.display = 'flex';
+      await refreshData();
+      document.getElementById('app-loader').style.display = 'none';
+      showPage('dashboard');
+    }
+  } catch(e) {
+    statusEl.classList.add('hidden');
+    showToast(e.message || 'CSV parse exception encountered', 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PDF STATEMENT DOWNLOAD TRIGGER
+   ══════════════════════════════════════════════════════════ */
+async function triggerPdfReportDownload(monthInputId = null) {
+  let targetMonth = "";
+  if (monthInputId) {
+    targetMonth = document.getElementById(monthInputId).value;
+  }
+  if (!targetMonth) {
+    // Default to current month
+    targetMonth = new Date().toISOString().slice(0, 7);
+  }
+
+  showToast('Generating statements...', 'info');
+  try {
+    const blob = await apiCall(`/api/reports/pdf?month=${targetMonth}&income=${appState.monthlyIncome}`, 'GET', null, true);
+    
+    // Create direct anchor element to trigger browser stream download
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pocketpal_invoice_${targetMonth}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    showToast('Download started! 📄', 'success');
+  } catch(e) {
+    showToast('PDF report generation failed', 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER: DASHBOARD
+   ══════════════════════════════════════════════════════════ */
+function renderDashboard() {
+  const now = new Date();
+  const thisMonth = now.toISOString().slice(0, 7);
+
+  // Spend total this month
+  const monthExpenses = appState.expenses.filter(e => e.date?.startsWith(thisMonth));
+  const totalSpent = monthExpenses.reduce((s, e) => s + parseFloat(e.amount), 0);
+  document.getElementById('dash-total-expenses').textContent = fmt(totalSpent);
+
+  // Outstanding Credit/Debts pending
+  const pendingDebts = appState.debts.filter(d => d.status === 'pending');
+  const borrowed = pendingDebts.filter(d => d.type === 'borrowed').reduce((s,d)=>s+parseFloat(d.amount),0);
+  const lent = pendingDebts.filter(d => d.type === 'lent').reduce((s,d)=>s+parseFloat(d.amount),0);
+  document.getElementById('dash-borrowed-card').textContent = fmt(borrowed);
+  document.getElementById('dash-lent-card').textContent = fmt(lent);
+
+  // Income & Savings Goal calculation
+  const savings = Math.max(0, appState.monthlyIncome - totalSpent);
+  const savingsRatio = appState.monthlyIncome > 0 ? (savings / appState.monthlyIncome * 100) : 0;
+  document.getElementById('dash-savings-tracker').textContent = fmt(savings);
+  document.getElementById('dash-savings-ratio').textContent = `${savingsRatio.toFixed(1)}% Savings Ratio`;
+
+  // Budget Limits warning info
+  document.getElementById('dash-active-budgets').textContent = `${appState.budgets.length} set`;
+  
+  // Evaluate budget warning flag
+  let exceededCount = 0;
+  // Group categories spent
+  const catSpent = {};
+  monthExpenses.forEach(e => {
+    catSpent[e.category] = (catSpent[e.category] || 0) + parseFloat(e.amount);
+  });
+  
+  appState.budgets.forEach(b => {
+    const spent = catSpent[b.category] || 0;
+    if (spent > b.limit_amount) {
+      exceededCount++;
+    }
+  });
+
+  const bWarningEl = document.getElementById('dash-budget-warning');
+  if (exceededCount > 0) {
+    bWarningEl.className = 'text-[10px] text-error mt-0.5 font-bold animate-pulse';
+    bWarningEl.textContent = `⚠️ ${exceededCount} Budget limits exceeded!`;
+  } else {
+    bWarningEl.className = 'text-[10px] text-on-surface-variant mt-0.5';
+    bWarningEl.textContent = `All categories within limits`;
+  }
+
+  // Health Score Visual representation
+  const hsCircle = document.getElementById('health-score-circle');
+  const hsNum = document.getElementById('health-score-num');
+  const hsGrade = document.getElementById('health-score-grade');
+  const hsTip = document.getElementById('health-score-tip');
+
+  if (appState.healthScore) {
+    const scoreVal = appState.healthScore.score;
+    const gradeVal = appState.healthScore.grade;
+    const colorVal = appState.healthScore.color;
+    
+    hsNum.textContent = scoreVal;
+    hsGrade.textContent = gradeVal;
+    hsGrade.style.color = colorVal;
+    
+    // Circle dasharray calculation: Circumference = 2 * PI * r = 2 * 3.1415 * 40 = 251.2
+    const offset = 251.2 - (scoreVal / 100) * 251.2;
+    hsCircle.setAttribute('stroke', colorVal);
+    hsCircle.style.strokeDashoffset = offset;
+    
+    if (appState.healthScore.tips && appState.healthScore.tips.length > 0) {
+      hsTip.textContent = appState.healthScore.tips[0];
+    }
+  } else {
+    hsNum.textContent = '-';
+    hsGrade.textContent = '-';
+    hsCircle.style.strokeDashoffset = 251.2;
+    hsTip.textContent = 'Add data to recalculate financial grade.';
+  }
+
+  // ML Prediction UI Cards update
+  const mlMsg = document.getElementById('ml-prediction-msg');
+  const mlTotal = document.getElementById('ml-predicted-total');
+  const mlCats = document.getElementById('ml-category-predictions');
+
+  if (appState.mlPrediction) {
+    mlMsg.textContent = appState.mlPrediction.message || "Model running.";
+    mlTotal.textContent = fmt(appState.mlPrediction.predicted_total);
+    
+    if (appState.mlPrediction.category_predictions && Object.keys(appState.mlPrediction.category_predictions).length > 0) {
+      mlCats.innerHTML = Object.entries(appState.mlPrediction.category_predictions).map(([cat, val]) => `
+        <span class="inline-flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2 py-0.5 text-[9px] text-on-surface-variant font-medium">
+          <span>${catEmoji(cat)}</span>
+          <span class="font-semibold">${cat}:</span>
+          <span class="font-mono text-primary font-bold">${fmt(val)}</span>
+        </span>
+      `).join('');
+    } else {
+      mlCats.innerHTML = `<span class="text-[9px] text-on-surface-variant italic">Data distribution unavailable</span>`;
+    }
+  } else {
+    mlMsg.textContent = "AI engine predictions require data updates.";
+    mlTotal.textContent = fmt(0);
+    mlCats.innerHTML = '';
+  }
+
+  // Recent transactions table render (top 5)
+  const recentEl = document.getElementById('dash-recent-list');
+  const recentExp = appState.expenses.slice(0, 5);
+  if (recentExp.length === 0) {
+    recentEl.innerHTML = '<div class="p-6 text-center text-on-surface-variant text-xs">No recent transactions.</div>';
+  } else {
+    recentEl.innerHTML = recentExp.map(e => `
+      <div class="flex items-center justify-between p-3.5 hover:bg-white/5 transition-colors cursor-pointer group" onclick="showPage('expenses')">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-surface-container-highest flex items-center justify-center group-hover:scale-105 transition-transform text-lg">
+            ${catEmoji(e.category)}
+          </div>
+          <div>
+            <p class="font-semibold text-on-surface text-xs">${esc(e.description)}</p>
+            <p class="text-[10px] text-on-surface-variant font-medium">${e.category} &bull; ${fmtDate(e.date)}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="font-mono text-xs text-on-surface font-semibold">-${fmt(e.amount)}</p>
+        </div>
+      </div>`).join('');
+  }
+
+  // Pending repayments card grid
+  const pendingEl = document.getElementById('dash-pending-list');
+  const pendingItems = appState.debts.filter(d => d.status === 'pending').slice(0, 3);
+  if (pendingItems.length === 0) {
+    pendingEl.innerHTML = '<p class="text-on-surface-variant text-xs text-center py-4">No pending repayments 🎉</p>';
+  } else {
+    pendingEl.innerHTML = pendingItems.map(d => {
+      const isOverdue = d.due_date && new Date(d.due_date) < new Date();
+      const color = d.type === 'lent' ? 'tertiary' : 'error';
+      return `<div class="flex items-center justify-between py-2 px-2.5 rounded-xl hover:bg-white/5 transition-colors">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-${color}/10 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-${color} text-md">${d.type==='lent'?'call_made':'call_received'}</span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs font-semibold text-on-surface truncate max-w-[100px]">${esc(d.person)}</p>
+            <p class="text-[9px] text-on-surface-variant">${d.due_date ? `Due ${fmtDate(d.due_date)}` : 'No date'}</p>
+          </div>
+        </div>
+        <span class="font-mono text-xs font-bold text-${color}">${d.type==='lent'?'+':'-'}${fmt(d.amount)}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER: ANALYTICS & CHARTS
+   ══════════════════════════════════════════════════════════ */
+function populateMonthSelector() {
+  const sel = document.getElementById('analytics-month');
+  const monthInput = document.getElementById('report-download-month');
+  
+  const months = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(); d.setMonth(d.getMonth() - i);
+    const val = d.toISOString().slice(0, 7);
+    const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+    months.push({ val, label });
+  }
+  
+  sel.innerHTML = months.map((m,i) => `<option value="${m.val}" ${i===0?'selected':''}>${m.label}</option>`).join('');
+  if (monthInput) monthInput.value = months[0].val;
+}
+
+function renderAnalytics() {
+  const month = document.getElementById('analytics-month').value;
+  const monthExpenses = appState.expenses.filter(e => e.date?.startsWith(month));
+
+  const cats = ['Food', 'Travel', 'Shopping', 'Recharge', 'Petrol', 'Others'];
+  const catTotals = cats.map(c => monthExpenses.filter(e => e.category === c).reduce((s,e) => s + parseFloat(e.amount), 0));
+  const totalMonthSpent = catTotals.reduce((a,b)=>a+b,0);
+
+  // Pie/Doughnut ChartJS
+  const pieColors = ['#818cf8', '#60a5fa', '#34d399', '#f472b6', '#fb7185', '#94a3b8'];
+  if (chartPie) chartPie.destroy();
+  const pieCtx = document.getElementById('chart-pie').getContext('2d');
+  chartPie = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: cats,
+      datasets: [{
+        data: catTotals,
+        backgroundColor: pieColors,
+        borderColor: 'transparent',
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#cbc3d7', font: { size: 10, family: 'Inter' } }
+        },
+        tooltip: {
+          callbacks: { label: ctx => ` ${fmt(ctx.raw)} (${totalMonthSpent > 0 ? Math.round(ctx.raw / totalMonthSpent * 100) : 0}%)` }
+        }
+      }
+    }
+  });
+
+  // Monthly trends bar chart (last 6 months)
+  const barLabels = [], barData = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth() - i);
+    const key = d.toISOString().slice(0, 7);
+    const label = d.toLocaleString('default', { month: 'short' });
+    const total = appState.expenses.filter(e => e.date?.startsWith(key)).reduce((s,e)=>s+parseFloat(e.amount),0);
+    barLabels.push(label);
+    barData.push(total);
+  }
+
+  if (chartBar) chartBar.destroy();
+  const barCtx = document.getElementById('chart-bar').getContext('2d');
+  chartBar = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: barLabels,
+      datasets: [{
+        label: 'Expenses',
+        data: barData,
+        backgroundColor: 'rgba(129, 140, 248, 0.45)',
+        hoverBackgroundColor: '#818cf8',
+        borderRadius: 8,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => '₹'+v }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+
+  // Category list and progressive budgets
+  const limitDict = {};
+  appState.budgets.forEach(b => {
+    limitDict[b.category] = b.limit_amount;
+  });
+
+  const breakdownEl = document.getElementById('analytics-breakdown');
+  if (totalMonthSpent === 0) {
+    breakdownEl.innerHTML = '<p class="text-on-surface-variant text-xs text-center py-4">No records found for selected month.</p>';
+  } else {
+    breakdownEl.innerHTML = cats.map((c, idx) => {
+      const amt = catTotals[idx];
+      const limit = limitDict[c] || 0;
+      const pctOfTotal = totalMonthSpent > 0 ? Math.round(amt / totalMonthSpent * 100) : 0;
+      
+      let budgetLabel = "No limit set";
+      let barColor = "from-primary to-secondary";
+      let exceededWarning = "";
+
+      if (limit > 0) {
+        const usagePct = (amt / limit) * 100;
+        budgetLabel = `Budget Limit: ${fmt(limit)} (${usagePct.toFixed(0)}% used)`;
+        
+        if (amt > limit) {
+          barColor = "from-error to-red-600";
+          exceededWarning = `<span class="px-2 py-0.5 bg-error-container text-error border border-error/20 rounded-md text-[9px] font-bold uppercase animate-pulse">Exceeded</span>`;
+        } else if (usagePct >= 80) {
+          barColor = "from-yellow-400 to-yellow-600";
+        } else {
+          barColor = "from-tertiary to-secondary";
+        }
+      }
+
+      return `
+      <div class="space-y-1 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+        <div class="flex justify-between items-start">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">${catEmoji(c)}</span>
+            <div>
+              <p class="text-xs font-bold text-on-surface">${c}</p>
+              <p class="text-[9px] text-on-surface-variant">${budgetLabel}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-mono font-bold text-on-surface">${fmt(amt)}</p>
+            <p class="text-[9px] text-on-surface-variant">${pctOfTotal}% of total spend</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-3 pt-1">
+          <div class="h-1.5 bg-white/10 rounded-full overflow-hidden flex-1">
+            <div class="h-full bg-gradient-to-r ${barColor} rounded-full transition-all" style="width: ${Math.min(100, limit > 0 ? (amt/limit*100) : pctOfTotal)}%"></div>
+          </div>
+          ${exceededWarning}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Debt Analytics breakdown text
+  const oweTotal = appState.debts.filter(d => d.type === 'borrowed').reduce((s,d)=>s+parseFloat(d.amount),0);
+  const lentTotal = appState.debts.filter(d => d.type === 'lent').reduce((s,d)=>s+parseFloat(d.amount),0);
+  const pendingCount = appState.debts.filter(d => d.status === 'pending').length;
+  const settledCount = appState.debts.filter(d => d.status === 'paid').length;
+
+  document.getElementById('an-borrowed').textContent = fmt(oweTotal);
+  document.getElementById('an-lent').textContent = fmt(lentTotal);
+  document.getElementById('an-pending').textContent = pendingCount;
+  document.getElementById('an-settled').textContent = settledCount;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILITIES
+   ══════════════════════════════════════════════════════════ */
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById(`page-${page}`);
+  if (el) el.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('nav-active', n.dataset.page === page);
+  });
+  document.querySelectorAll('.bottom-nav-item').forEach(n => {
+    n.classList.toggle('nav-active', n.dataset.page === page);
+  });
+
+  closeMobileSidebar();
+  refreshActivePage();
+}
+
+function refreshActivePage() {
+  const activePage = document.querySelector('.page.active')?.id?.replace('page-', '');
+  if (activePage === 'dashboard') renderDashboard();
+  if (activePage === 'expenses') renderExpenses();
+  if (activePage === 'debt') renderDebt();
+  if (activePage === 'analytics') renderAnalytics();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeIfBackdrop(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+function handleFAB() {
+  const activePage = document.querySelector('.page.active')?.id?.replace('page-', '');
+  if (activePage === 'debt') openDebtModal();
+  else openExpenseModal();
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-sidebar-overlay');
+  const isOpen = !sidebar.classList.contains('-translate-x-full');
+  sidebar.classList.toggle('-translate-x-full', isOpen);
+  overlay.classList.toggle('hidden', isOpen);
+}
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.add('-translate-x-full');
+  document.getElementById('mobile-sidebar-overlay').classList.add('hidden');
+}
+
+function fmt(n) { return '₹' + parseFloat(n||0).toLocaleString('en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+function fmtDate(d) {
+  if (!d) return '';
+  try { return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }); } catch { return d; }
+}
+function catEmoji(cat) {
+  return { Food:'🍔', Travel:'✈️', Shopping:'🛍️', Recharge:'📱', Petrol:'⛽', Others:'📦' }[cat] || '💰';
+}
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  el.textContent = `${icons[type]||''} ${msg}`;
+  el.style.opacity = 1;
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => {
+    el.style.opacity = 0;
+    el.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 3500);
+}
+
+function setLoading(btnId, loading, text) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) {
+    btn._origText = btn.innerHTML;
+    btn.innerHTML = `<span class="loader-ring" style="width:16px;height:16px;border-width:2px"></span> ${text}`;
+  } else {
+    btn.innerHTML = btn._origText || text;
+  }
+}
+
+function heroParallax(e) {
+  const hero = document.querySelector('.hero-gradient');
+  if (!hero) return;
+  const { clientX, clientY } = e;
+  const { innerWidth, innerHeight } = window;
+  hero.style.transform = `translate(${(clientX - innerWidth/2)/80}px, ${(clientY - innerHeight/2)/80}px)`;
+}
+
+function clearAllData() {
+  if (!confirm('Are you sure you want to clear your local configuration cached keys?')) return;
+  localStorage.clear();
+  showToast('Offline cache cleared successfully.', 'info');
+}
+
+function confirmDelete() {
+  if (appState.deleteCallback) appState.deleteCallback();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APP INIT ENTRYPOINT
+   ══════════════════════════════════════════════════════════ */
+async function init() {
+  initSupabase();
+
+  if (sbClient) {
+    // Check if session token exists
+    const { data: { session } } = await sbClient.auth.getSession();
+    if (session?.user) {
+      currentSession = session;
+      currentUser = session.user;
+      document.getElementById('app-loader').style.display = 'none';
+      await enterApp(currentUser);
+      return;
+    }
+    
+    // Listener for Auth changes
+    sbClient.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        currentSession = session;
+        currentUser = session.user;
+        await enterApp(currentUser);
+      }
+    });
+  }
+
+  // Not signed in -> Show authentication views
+  document.getElementById('app-loader').style.display = 'none';
+  document.getElementById('auth-section').style.display = 'block';
+  showLogin();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['expense-modal', 'debt-modal', 'budget-modal', 'delete-modal'].forEach(closeModal);
+  }
+});
+
+// Run application
+init();
+</script>
+
+</body>
+</html>

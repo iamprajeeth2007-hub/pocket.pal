@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: pocketpal-api
+    env: python
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    envVars:
+      - key: SUPABASE_URL
+        value: https://zgnnxujzbjohaovsfuhj.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpnbm54dWp6YmpvaGFvdnNmdWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MjA1NzUsImV4cCI6MjA5NTE5NjU3NX0.srCWZrPVScAmd02zAJCmuypsS2aRaZGHLiW7L-kbqks
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        sync: false
