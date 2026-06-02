@@ -349,7 +349,22 @@ tailwind.config = {
           <p id="health-score-tip" class="text-on-surface-variant text-[11px] leading-tight max-w-[200px] h-6 overflow-hidden text-ellipsis">Score auto-recalculates dynamically based on budgets.</p>
         </div>
 
-      </section>
+      <div class="hero-gradient rounded-[2rem] p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:scale-95 active:scale-95 transition-transform card-hover" onclick="window.location.href='scan-pay.html'">
+  <div class="relative w-20 h-20 flex items-center justify-center">
+    <div class="absolute inset-0 border-2 border-white/30 rounded-lg"></div>
+    <span class="material-symbols-outlined text-4xl text-white">qr_code_scanner</span>
+    <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50 rounded-tl-lg"></div>
+    <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50 rounded-tr-lg"></div>
+    <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50 rounded-bl-lg"></div>
+    <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50 rounded-br-lg"></div>
+  </div>
+  <h2 class="text-xl font-bold text-white flex items-center gap-2">
+    <span class="material-symbols-outlined text-lg">qr_code_scanner</span>
+    Scan &amp; Pay
+  </h2>
+  <p class="text-sm text-white/80 text-center">Scan any UPI QR and track expenses automatically</p>
+</div>
+</section>
 
       <!-- Sub Metric Cards -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
