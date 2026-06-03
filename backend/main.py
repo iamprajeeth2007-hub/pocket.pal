@@ -20,7 +20,10 @@ app = FastAPI(
 )
 
 # CORS — allow configured origins (set ALLOWED_ORIGINS env var in production)
-origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",")]
+if settings.ALLOWED_ORIGINS.strip() == "*":
+    origins = ["*"]
+else:
+    origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -46,20 +49,31 @@ if settings.SUPABASE_SERVICE_ROLE_KEY:
     except Exception as e:
         print(f"[WARN] Supabase admin client init failed: {e}")
 
+# Validate that Supabase client is active
+if supabase is None and supabase_admin is None:
+    raise RuntimeError("Supabase client initialization failed – check .env for SUPABASE_URL and keys.")
+
 # Use admin client when available (bypasses RLS for server-side ops), else fall back to anon
 def get_db() -> Client:
-    return supabase_admin if supabase_admin else supabase
+    """Return an active Supabase client or raise an HTTPException if unavailable."""
+    if supabase_admin:
+        return supabase_admin
+    if supabase:
+        return supabase
+    raise HTTPException(status_code=503, detail="Supabase backend is not configured.")
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 security = HTTPBearer()
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
     """Verify Supabase JWT and return the authenticated user."""
-    if not supabase:
+    # Ensure a Supabase client is available for auth
+    auth_client = supabase_admin if supabase_admin else supabase
+    if not auth_client:
         raise HTTPException(status_code=503, detail="Supabase backend is not configured.")
     token = credentials.credentials
     try:
-        user_res = supabase.auth.get_user(token)
+        user_res = auth_client.auth.get_user(token)
         if not user_res or not user_res.user:
             raise HTTPException(status_code=401, detail="Invalid or expired session token.")
         return user_res.user
@@ -146,6 +160,17 @@ async def create_expense(expense: ExpenseCreate, user=Depends(get_current_user))
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ── UPI compatibility routes ────────────────────────────────────────────────────
+@app.post("/api/upi/save-expense")
+async def upi_save_expense(expense: ExpenseCreate, user=Depends(get_current_user)):
+    """Alias for creating an expense via the UPI endpoint."""
+    return await create_expense(expense, user)
+
+@app.post("/api/upi/categorize")
+def upi_categorize_expense(req: CategorizeRequest):
+    """Alias for categorizing a description via the UPI endpoint."""
+    return api_categorize_expense(req)
 
 @app.put("/api/expenses/{expense_id}")
 async def update_expense(expense_id: str, expense: ExpenseCreate, user=Depends(get_current_user)):
@@ -378,3 +403,6 @@ async def upload_bank_statement(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"CSV Upload failed: {str(e)}")
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
