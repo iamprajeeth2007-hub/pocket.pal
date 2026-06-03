@@ -349,7 +349,7 @@ tailwind.config = {
           <p id="health-score-tip" class="text-on-surface-variant text-[11px] leading-tight max-w-[200px] h-6 overflow-hidden text-ellipsis">Score auto-recalculates dynamically based on budgets.</p>
         </div>
 
-      <div class="hero-gradient rounded-[2rem] p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:scale-95 active:scale-95 transition-transform card-hover" onclick="window.location.href='scan-pay.html'">
+      <div class="hero-gradient rounded-[2rem] p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:scale-[0.98] active:scale-95 transition-transform card-hover" onclick="openScanPay()" id="scan-pay-card" role="button" aria-label="Open Scan and Pay">
   <div class="relative w-20 h-20 flex items-center justify-center">
     <div class="absolute inset-0 border-2 border-white/30 rounded-lg"></div>
     <span class="material-symbols-outlined text-4xl text-white">qr_code_scanner</span>
@@ -359,7 +359,7 @@ tailwind.config = {
     <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50 rounded-br-lg"></div>
   </div>
   <h2 class="text-xl font-bold text-white flex items-center gap-2">
-    <span class="material-symbols-outlined text-lg">qr_code_scanner</span>
+    <span class="material-symbols-outlined text-lg">photo_camera</span>
     Scan &amp; Pay
   </h2>
   <p class="text-sm text-white/80 text-center">Scan any UPI QR and track expenses automatically</p>
@@ -2109,8 +2109,32 @@ document.addEventListener('keydown', e => {
   }
 });
 
+/* ═══════════════════════════════════════════════════════════
+   SCAN & PAY LAUNCHER
+   ══════════════════════════════════════════════════════════ */
+function openScanPay() {
+  console.log('[Dashboard] Opening Scan & Pay page');
+  // Share session token with scan-pay.html via sessionStorage so it can call the API
+  if (currentSession?.access_token) {
+    try {
+      sessionStorage.setItem('pp_session', JSON.stringify({
+        access_token: currentSession.access_token,
+        expires_at:   currentSession.expires_at
+      }));
+      console.log('[Dashboard] Session token shared to sessionStorage');
+    } catch (e) {
+      console.warn('[Dashboard] Could not share session token:', e);
+    }
+  } else {
+    console.warn('[Dashboard] No session available when opening Scan & Pay');
+  }
+  // Open in new tab so dashboard state is preserved
+  window.open('scan-pay.html', '_blank');
+}
+
 // Run application
 init();
+
 </script>
 
 </body>

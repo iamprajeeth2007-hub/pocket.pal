@@ -1,23 +1,829 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scan & Pay - PocketPal</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Scan &amp; Pay – PocketPal</title>
+
+  <!-- Suppress Tailwind CDN warning -->
+  <script>const _cw=console.warn;console.warn=(...a)=>{if(typeof a[0]==="string"&&a[0].includes("cdn.tailwindcss.com"))return;_cw.apply(console,a);};</script>
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- jsQR fallback for browsers without BarcodeDetector -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <!-- Supabase JS for saving expenses -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script id="tw-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#818cf8", secondary: "#60a5fa", tertiary: "#22d3ee",
+            surface: "#060A16", "surface-container": "#0F172A",
+            "surface-container-high": "#1E293B", "on-surface": "#f8fafc",
+            "on-surface-variant": "#94a3b8", "primary-container": "#6366f1",
+            error: "#f87171"
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    body { background-color: #060A16; color: #f8fafc; font-family: 'Inter', sans-serif; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      background: #060A16; color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      min-height: 100dvh; overflow-x: hidden;
+    }
     .hero-gradient { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+    .glass-card {
+      background: rgba(10,15,30,0.6);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .glass-modal {
+      background: rgba(10,15,30,0.96);
+      backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 0 60px rgba(99,102,241,0.2);
+    }
+
+    /* Scanner viewfinder */
+    #scanner-wrap { position: relative; width:100%; max-width:380px; margin:0 auto; }
+    #scanner-video {
+      width: 100%; aspect-ratio: 1/1; object-fit: cover;
+      border-radius: 1.25rem; display: block;
+      background: #0a0f1d;
+    }
+    #scanner-canvas { display: none; }
+
+    /* Animated scan line */
+    .scan-line {
+      position: absolute; left: 5%; right: 5%; height: 2px;
+      background: linear-gradient(90deg, transparent, #818cf8, #22d3ee, #818cf8, transparent);
+      border-radius: 2px;
+      animation: scanLine 2s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(129,140,248,0.7);
+    }
+    @keyframes scanLine {
+      0%   { top: 8%; opacity: 1; }
+      50%  { top: 88%; opacity: 0.9; }
+      100% { top: 8%; opacity: 1; }
+    }
+
+    /* Corner brackets */
+    .corner { position: absolute; width: 28px; height: 28px; }
+    .corner-tl { top: 8px; left: 8px; border-top: 3px solid #818cf8; border-left: 3px solid #818cf8; border-radius: 6px 0 0 0; }
+    .corner-tr { top: 8px; right: 8px; border-top: 3px solid #818cf8; border-right: 3px solid #818cf8; border-radius: 0 6px 0 0; }
+    .corner-bl { bottom: 8px; left: 8px; border-bottom: 3px solid #818cf8; border-left: 3px solid #818cf8; border-radius: 0 0 0 6px; }
+    .corner-br { bottom: 8px; right: 8px; border-bottom: 3px solid #818cf8; border-right: 3px solid #818cf8; border-radius: 0 0 6px 0; }
+
+    /* Pulse ring for detection */
+    @keyframes pulseRing {
+      0%   { box-shadow: 0 0 0 0 rgba(99,102,241,0.6); }
+      70%  { box-shadow: 0 0 0 16px rgba(99,102,241,0); }
+      100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+    }
+    .qr-detected { animation: pulseRing 0.6s ease-out; }
+
+    /* Modal overlay */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px); z-index: 200;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .overlay.open { display: flex; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(15,23,42,0.97); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 12px 20px; font-size: 14px;
+      z-index: 9999; opacity: 0; transition: all 0.3s ease;
+      pointer-events: none; white-space: nowrap;
+    }
+
+    /* App launcher buttons */
+    .app-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px; border-radius: 16px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer; transition: all 0.2s; user-select: none;
+      min-width: 80px;
+    }
+    .app-btn:active { transform: scale(0.93); }
+    .app-btn:hover { background: rgba(255,255,255,0.1); }
+
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-  <div class="hero-gradient rounded-2xl p-8 text-center">
-    <h1 class="text-3xl font-bold text-white mb-4">Scan &amp; Pay</h1>
-    <p class="text-white/80 mb-6">Use your camera to scan UPI QR codes and automatically log expenses.</p>
-    <button class="hero-gradient text-white font-semibold py-2 px-4 rounded-xl" onclick="alert('Scanner not implemented')">
-      <span class="material-symbols-outlined align-middle">qr_code_scanner</span> Open Scanner
-    </button>
+<body class="flex flex-col min-h-dvh">
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ══ Header ══ -->
+<header class="sticky top-0 z-40 glass-card border-b border-white/5 px-4 py-3 flex items-center gap-3">
+  <a href="index.html" id="back-btn"
+     class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+    <span class="material-symbols-outlined text-on-surface-variant text-xl">arrow_back</span>
+  </a>
+  <span class="material-symbols-outlined text-primary text-xl">qr_code_scanner</span>
+  <h1 class="font-bold text-on-surface text-base">Scan &amp; Pay</h1>
+  <span class="ml-auto text-xs text-on-surface-variant font-mono" id="scanner-status">Initializing...</span>
+</header>
+
+<!-- ══ Main ══ -->
+<main class="flex-1 flex flex-col items-center gap-5 px-4 py-6 max-w-lg mx-auto w-full">
+
+  <!-- Scanner card -->
+  <div class="glass-card rounded-3xl p-5 w-full">
+    <div id="scanner-wrap">
+      <video id="scanner-video" autoplay playsinline muted></video>
+      <canvas id="scanner-canvas"></canvas>
+
+      <!-- Overlay corners & scan line (visible while scanning) -->
+      <div id="scanner-overlay" class="absolute inset-0 pointer-events-none">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        <div class="scan-line" id="scan-line"></div>
+      </div>
+    </div>
+
+    <!-- Status / error below video -->
+    <div id="camera-error" class="hidden mt-4 text-center">
+      <span class="material-symbols-outlined text-error text-3xl">no_photography</span>
+      <p id="camera-error-msg" class="text-error text-sm mt-1 font-semibold"></p>
+      <p class="text-on-surface-variant text-xs mt-1">Check browser permissions &amp; reload.</p>
+      <button onclick="startScanner()" class="mt-3 px-4 py-2 rounded-xl bg-primary/20 text-primary text-xs font-semibold hover:bg-primary/30 transition-colors">
+        Retry
+      </button>
+    </div>
+
+    <p id="scan-hint" class="text-center text-on-surface-variant text-xs mt-4">
+      Point camera at a UPI QR code — it detects automatically
+    </p>
   </div>
+
+  <!-- Upload fallback for desktop / if no camera -->
+  <div class="w-full">
+    <label id="upload-label"
+      class="glass-card rounded-2xl p-4 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
+      <span class="material-symbols-outlined text-on-surface-variant text-xl">upload_file</span>
+      <div class="flex-1">
+        <p class="text-sm font-semibold text-on-surface">Upload QR Image</p>
+        <p class="text-xs text-on-surface-variant">JPG, PNG — tap to choose</p>
+      </div>
+      <input id="qr-upload" type="file" accept="image/*" class="hidden" onchange="handleUpload(event)"/>
+    </label>
+  </div>
+
+</main>
+
+<!-- ══ Payment Modal ══ -->
+<div id="pay-modal" class="overlay" onclick="closePayModal(event)">
+  <div class="glass-modal rounded-3xl p-6 w-full max-w-sm" onclick="event.stopPropagation()">
+
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full hero-gradient flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-sm">payments</span>
+        </div>
+        <h2 class="font-bold text-on-surface text-base">UPI Payment</h2>
+      </div>
+      <button onclick="closePayModal()" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Merchant info -->
+    <div class="bg-white/5 rounded-2xl p-4 mb-4 space-y-2">
+      <div class="flex justify-between text-xs">
+        <span class="text-on-surface-variant">Merchant</span>
+        <span id="pay-merchant" class="text-on-surface font-semibold text-right max-w-[60%] truncate">–</span>
+      </div>
+      <div class="flex justify-between text-xs">
+        <span class="text-on-surface-variant">UPI ID</span>
+        <span id="pay-upi-id" class="text-primary font-mono text-right max-w-[60%] truncate">–</span>
+      </div>
+    </div>
+
+    <!-- Amount -->
+    <div class="mb-4">
+      <label class="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider mb-1 block">Amount (₹)</label>
+      <div class="border border-white/10 rounded-xl overflow-hidden bg-white/5">
+        <div class="flex items-center gap-2 px-4 py-3">
+          <span class="material-symbols-outlined text-primary text-xl">currency_rupee</span>
+          <input id="pay-amount" type="number" min="1" step="1" placeholder="Enter amount"
+            class="bg-transparent flex-1 text-on-surface text-xl font-bold font-mono placeholder-on-surface-variant/40 outline-none"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category auto-detect -->
+    <div class="mb-5">
+      <label class="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider mb-1 block">Category</label>
+      <select id="pay-category"
+        class="w-full bg-surface-container-high border border-white/10 rounded-xl px-3 py-2.5 text-on-surface text-xs font-semibold outline-none">
+        <option value="Others">📦 Others</option>
+        <option value="Food">🍔 Food</option>
+        <option value="Travel">✈️ Travel</option>
+        <option value="Shopping">🛍️ Shopping</option>
+        <option value="Recharge">📱 Recharge</option>
+        <option value="Petrol">⛽ Petrol</option>
+      </select>
+    </div>
+
+    <!-- Launch app buttons -->
+    <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">Pay with</p>
+    <div class="flex gap-3 mb-5 justify-center">
+      <button class="app-btn" onclick="launchApp('gpay')">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/512px-Google_Pay_Logo.svg.png"
+          alt="GPay" class="w-9 h-9 object-contain rounded-lg" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <span class="material-symbols-outlined text-2xl hidden">payment</span>
+        <span class="text-[10px] text-on-surface-variant">Google Pay</span>
+      </button>
+      <button class="app-btn" onclick="launchApp('phonepe')">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/PhonePe_Logo.svg/512px-PhonePe_Logo.svg.png"
+          alt="PhonePe" class="w-9 h-9 object-contain rounded-lg" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <span class="material-symbols-outlined text-2xl hidden">smartphone</span>
+        <span class="text-[10px] text-on-surface-variant">PhonePe</span>
+      </button>
+      <button class="app-btn" onclick="launchApp('paytm')">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Paytm_Logo_%28standalone%29.svg/512px-Paytm_Logo_%28standalone%29.svg.png"
+          alt="Paytm" class="w-9 h-9 object-contain rounded-lg" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <span class="material-symbols-outlined text-2xl hidden">account_balance_wallet</span>
+        <span class="text-[10px] text-on-surface-variant">Paytm</span>
+      </button>
+      <button class="app-btn" onclick="launchApp('upi')">
+        <span class="material-symbols-outlined text-2xl text-primary">open_in_app</span>
+        <span class="text-[10px] text-on-surface-variant">Any UPI</span>
+      </button>
+    </div>
+
+    <!-- Save & Track -->
+    <button id="save-btn" onclick="saveAndTrack()"
+      class="w-full hero-gradient text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.97] text-sm">
+      <span class="material-symbols-outlined text-base">save</span>
+      Save &amp; Track Expense
+    </button>
+
+    <p class="text-[10px] text-on-surface-variant text-center mt-2">
+      Saving logs this as an expense in your PocketPal dashboard.
+    </p>
+  </div>
+</div>
+
+<!-- ══ JS ══ -->
+<script>
+/* ─────────────────────────────────────────────────────────
+   CONFIG  (keep in sync with index.html)
+   ───────────────────────────────────────────────────────── */
+const SUPABASE_URL      = 'https://zgnnxujzbjohaovsfuhj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpnbm54dWp6YmpvaGFvdnNmdWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MjA1NzUsImV4cCI6MjA5NTE5NjU3NX0.srCWZrPVScAmd02zAJCmuypsS2aRaZGHLiW7L-kbqks';
+const BACKEND_URL       = ''; // ← fill after Render deploy, e.g. 'https://pocketpal-api.onrender.com'
+
+const API_BASE = BACKEND_URL
+  ? BACKEND_URL
+  : (location.origin.includes('localhost') || location.origin.includes('127.0.0.1')
+      ? 'http://localhost:8000'
+      : location.origin);
+
+/* ─────────────────────────────────────────────────────────
+   STATE
+   ───────────────────────────────────────────────────────── */
+let sbClient   = null;
+let authSession = null;
+let videoStream = null;
+let scanInterval = null;
+let upiData     = {};          // { pa, pn, am, tn, rawQr }
+let isScanning  = false;
+let hasBarcodeDetector = false;
+let barcodeDetector    = null;
+
+/* ─────────────────────────────────────────────────────────
+   UTILITIES
+   ───────────────────────────────────────────────────────── */
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  el.textContent = `${icons[type] || ''} ${msg}`;
+  el.style.opacity = 1;
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => {
+    el.style.opacity = 0;
+    el.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 3500);
+}
+
+function setStatus(msg) {
+  document.getElementById('scanner-status').textContent = msg;
+  console.log('[ScanPay] Status:', msg);
+}
+
+/* ─────────────────────────────────────────────────────────
+   SUPABASE INIT
+   ───────────────────────────────────────────────────────── */
+function initSupabase() {
+  try {
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[ScanPay] Supabase client initialized');
+
+    // 1) Try sessionStorage token shared from index.html (same-origin new tab)
+    try {
+      const shared = sessionStorage.getItem('pp_session');
+      if (shared) {
+        const parsed = JSON.parse(shared);
+        if (parsed?.access_token) {
+          authSession = parsed;
+          console.log('[ScanPay] Auth token loaded from sessionStorage');
+          return; // No need to fetch — token already set
+        }
+      }
+    } catch (e) {
+      console.warn('[ScanPay] Could not read sessionStorage session:', e);
+    }
+
+    // 2) Fallback: ask Supabase for a live session (works if cookie/localStorage exists)
+    sbClient.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        authSession = session;
+        console.log('[ScanPay] Live session found, user:', session.user.email);
+      } else {
+        console.warn('[ScanPay] No active session — expense saving will fail. Log in via the dashboard first.');
+      }
+    });
+  } catch (e) {
+    console.error('[ScanPay] Supabase init failed:', e);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   CAMERA & SCANNER
+   ───────────────────────────────────────────────────────── */
+async function startScanner() {
+  console.log('[ScanPay] Requesting camera access…');
+  setStatus('Requesting camera…');
+
+  const errorBox  = document.getElementById('camera-error');
+  const errorMsg  = document.getElementById('camera-error-msg');
+  const overlay   = document.getElementById('scanner-overlay');
+  const scanHint  = document.getElementById('scan-hint');
+  const video     = document.getElementById('scanner-video');
+
+  errorBox.classList.add('hidden');
+
+  // Stop any existing stream
+  stopScanner();
+
+  try {
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' }, // rear camera preferred
+        width:  { ideal: 1280 },
+        height: { ideal: 1280 }
+      }
+    };
+
+    videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = videoStream;
+    await video.play();
+
+    console.log('[ScanPay] Camera started:', videoStream.getVideoTracks()[0]?.label);
+    setStatus('Scanning…');
+    overlay.style.display = 'block';
+    scanHint.textContent = 'Point at a UPI QR code — auto-detects';
+    isScanning = true;
+
+    // Check BarcodeDetector support
+    if ('BarcodeDetector' in window) {
+      try {
+        barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        hasBarcodeDetector = true;
+        console.log('[ScanPay] Using BarcodeDetector API');
+      } catch {
+        hasBarcodeDetector = false;
+      }
+    } else {
+      hasBarcodeDetector = false;
+      console.log('[ScanPay] BarcodeDetector not available, falling back to jsQR');
+    }
+
+    // Start scan loop
+    startScanLoop();
+
+  } catch (err) {
+    console.error('[ScanPay] Camera error:', err.name, err.message);
+    overlay.style.display = 'none';
+    errorBox.classList.remove('hidden');
+
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      errorMsg.textContent = 'Camera permission denied.';
+      toast('Please allow camera access in your browser settings.', 'error');
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      errorMsg.textContent = 'No camera found on this device.';
+      toast('No camera detected. Use the upload option below.', 'error');
+    } else if (err.name === 'NotReadableError') {
+      errorMsg.textContent = 'Camera is in use by another app.';
+      toast('Camera busy. Close other apps using the camera.', 'error');
+    } else if (err.name === 'OverconstrainedError') {
+      // Retry without facingMode constraint
+      console.warn('[ScanPay] Overconstrained — retrying without facingMode');
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = videoStream;
+        await video.play();
+        setStatus('Scanning…');
+        isScanning = true;
+        startScanLoop();
+        return;
+      } catch (e2) {
+        errorMsg.textContent = 'Camera could not start.';
+      }
+    } else {
+      errorMsg.textContent = `Camera error: ${err.message}`;
+      toast('Camera error: ' + err.message, 'error');
+    }
+
+    setStatus('Camera error');
+    scanHint.textContent = 'Upload a QR image using the option below.';
+  }
+}
+
+function stopScanner() {
+  isScanning = false;
+  clearInterval(scanInterval);
+  scanInterval = null;
+  if (videoStream) {
+    videoStream.getTracks().forEach(t => t.stop());
+    videoStream = null;
+    console.log('[ScanPay] Camera stream stopped');
+  }
+}
+
+function startScanLoop() {
+  // 10fps scan loop is enough for QR detection
+  scanInterval = setInterval(async () => {
+    if (!isScanning) return;
+    const video = document.getElementById('scanner-video');
+    if (!video || video.readyState < 2) return;  // not ready yet
+
+    if (hasBarcodeDetector) {
+      await scanWithBarcodeDetector(video);
+    } else {
+      scanWithJsQR(video);
+    }
+  }, 100);
+}
+
+async function scanWithBarcodeDetector(video) {
+  try {
+    const codes = await barcodeDetector.detect(video);
+    if (codes.length > 0) {
+      const raw = codes[0].rawValue;
+      console.log('[ScanPay] BarcodeDetector detected QR:', raw);
+      handleQRResult(raw);
+    }
+  } catch (e) {
+    console.error('[ScanPay] BarcodeDetector scan error:', e);
+  }
+}
+
+function scanWithJsQR(video) {
+  const canvas = document.getElementById('scanner-canvas');
+  const ctx    = canvas.getContext('2d');
+  const w      = video.videoWidth;
+  const h      = video.videoHeight;
+
+  if (!w || !h) return;
+
+  canvas.width  = w;
+  canvas.height = h;
+  ctx.drawImage(video, 0, 0, w, h);
+
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
+  if (code) {
+    console.log('[ScanPay] jsQR detected QR:', code.data);
+    handleQRResult(code.data);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   UPI QR PARSING
+   ───────────────────────────────────────────────────────── */
+function parseUPI(rawQr) {
+  console.log('[ScanPay] Parsing UPI QR:', rawQr);
+
+  // UPI format: upi://pay?pa=merchant@upi&pn=Name&am=100&tn=note
+  if (!rawQr) return null;
+
+  let url;
+  try {
+    // Normalize: some QR codes are plain upi:// URLs
+    const normalized = rawQr.startsWith('upi://') ? rawQr : `upi://${rawQr}`;
+    url = new URL(normalized);
+  } catch {
+    // Try treating it as a query string fragment
+    try {
+      url = new URL('upi://pay?' + rawQr);
+    } catch {
+      console.warn('[ScanPay] Not a valid UPI QR code:', rawQr);
+      return null;
+    }
+  }
+
+  const params = url.searchParams;
+  const pa = (params.get('pa') || '').trim();
+  const pn = (params.get('pn') || params.get('mc') || 'Unknown Merchant').trim();
+  const am = params.get('am') || '';
+  const tn = params.get('tn') || params.get('tr') || '';
+
+  if (!pa) {
+    console.warn('[ScanPay] UPI QR has no `pa` field — might not be a UPI QR');
+    return null;
+  }
+
+  const result = { pa, pn, am, tn, rawQr };
+  console.log('[ScanPay] Parsed UPI data:', result);
+  return result;
+}
+
+function handleQRResult(raw) {
+  // Stop scanning loop while processing
+  stopScanner();
+  setStatus('QR detected!');
+
+  // Pulse animation
+  const video = document.getElementById('scanner-video');
+  video.classList.add('qr-detected');
+  setTimeout(() => video.classList.remove('qr-detected'), 700);
+
+  const parsed = parseUPI(raw);
+
+  if (!parsed) {
+    // Not a UPI QR — show error and resume
+    toast('Not a valid UPI QR code. Try again.', 'error');
+    console.error('[ScanPay] QR parsed but not UPI:', raw);
+    setTimeout(() => startScanner(), 2000);
+    return;
+  }
+
+  upiData = parsed;
+
+  // Auto-fill amount if QR has amount
+  const amountInput = document.getElementById('pay-amount');
+  if (parsed.am) amountInput.value = parsed.am;
+
+  // Auto-categorize via backend
+  autoCategorize(parsed.pn);
+
+  // Show payment modal
+  document.getElementById('pay-merchant').textContent = parsed.pn || 'Unknown Merchant';
+  document.getElementById('pay-upi-id').textContent   = parsed.pa;
+  document.getElementById('pay-modal').classList.add('open');
+
+  toast('QR scanned! Enter amount to pay.', 'success');
+  console.log('[ScanPay] Payment modal opened for:', parsed);
+}
+
+/* ─────────────────────────────────────────────────────────
+   AUTO-CATEGORIZE
+   ───────────────────────────────────────────────────────── */
+async function autoCategorize(description) {
+  if (!description) return;
+  console.log('[ScanPay] Auto-categorizing:', description);
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authSession?.access_token) {
+      headers['Authorization'] = `Bearer ${authSession.access_token}`;
+    }
+    const res = await fetch(`${API_BASE}/api/upi/categorize`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ description })
+    });
+    console.log('[ScanPay] Categorize API response status:', res.status);
+    if (res.ok) {
+      const data = await res.json();
+      console.log('[ScanPay] Categorize result:', data);
+      if (data.category && data.category !== 'Others') {
+        document.getElementById('pay-category').value = data.category;
+      }
+    }
+  } catch (err) {
+    console.error('[ScanPay] Auto-categorize API error:', err);
+    // Non-fatal — user can pick category manually
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   UPI APP LAUNCHER
+   ───────────────────────────────────────────────────────── */
+function buildUpiLink(app) {
+  const pa  = upiData.pa  || '';
+  const pn  = encodeURIComponent(upiData.pn  || 'Merchant');
+  const amt = document.getElementById('pay-amount').value.trim();
+  const tn  = encodeURIComponent(upiData.tn  || 'PocketPal Payment');
+
+  const base = `upi://pay?pa=${pa}&pn=${pn}&am=${amt}&tn=${tn}&cu=INR`;
+
+  const deepLinks = {
+    gpay:    `tez://upi/pay?pa=${pa}&pn=${pn}&am=${amt}&tn=${tn}&cu=INR`,
+    phonepe: `phonepe://pay?pa=${pa}&pn=${pn}&am=${amt}&tn=${tn}&cu=INR`,
+    paytm:   `paytmmp://pay?pa=${pa}&pn=${pn}&am=${amt}&tn=${tn}&cu=INR`,
+    upi:     base
+  };
+
+  return deepLinks[app] || base;
+}
+
+function launchApp(app) {
+  const amt = parseFloat(document.getElementById('pay-amount').value);
+  if (!amt || amt <= 0) {
+    toast('Please enter a valid amount first.', 'error');
+    return;
+  }
+  if (!upiData.pa) {
+    toast('No UPI ID found. Scan a QR first.', 'error');
+    return;
+  }
+
+  const link = buildUpiLink(app);
+  console.log('[ScanPay] Launching UPI app:', app, '→', link);
+
+  // Open deep link — browser will open installed app or show fallback
+  const a = document.createElement('a');
+  a.href = link;
+  a.click();
+
+  // Fallback: if no app opens within 2s, show message
+  const fallbackTimer = setTimeout(() => {
+    toast('UPI app not found. Install Google Pay, PhonePe, or Paytm.', 'error');
+    console.warn('[ScanPay] UPI deep link may not have opened — no app installed?');
+  }, 2000);
+
+  // If page goes hidden, app opened — clear fallback
+  document.addEventListener('visibilitychange', function handler() {
+    if (document.hidden) {
+      clearTimeout(fallbackTimer);
+      document.removeEventListener('visibilitychange', handler);
+    }
+  });
+}
+
+/* ─────────────────────────────────────────────────────────
+   SAVE & TRACK
+   ───────────────────────────────────────────────────────── */
+async function saveAndTrack() {
+  const amount    = parseFloat(document.getElementById('pay-amount').value);
+  const category  = document.getElementById('pay-category').value;
+  const merchant  = upiData.pn || 'UPI Payment';
+  const upiId     = upiData.pa || '';
+  const today     = new Date().toISOString().slice(0, 10);
+
+  if (!amount || amount <= 0) {
+    toast('Please enter a valid amount.', 'error');
+    return;
+  }
+
+  if (!authSession?.access_token) {
+    toast('Not signed in — please log in first.', 'error');
+    console.error('[ScanPay] No auth session available for saving expense');
+    return;
+  }
+
+  const payload = {
+    amount,
+    description: `UPI: ${merchant} (${upiId})`,
+    category,
+    date: today
+  };
+
+  console.log('[ScanPay] Saving expense via API:', JSON.stringify(payload));
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">refresh</span> Saving…';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/upi/save-expense`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authSession.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    console.log('[ScanPay] Save API response status:', res.status);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[ScanPay] Save API error body:', errText);
+      throw new Error(errText || 'Server error');
+    }
+
+    const saved = await res.json();
+    console.log('[ScanPay] Expense saved successfully:', saved);
+
+    toast('Expense saved! Dashboard updated. 🎉', 'success');
+    document.getElementById('pay-modal').classList.remove('open');
+
+    // Reset for next scan
+    upiData = {};
+    document.getElementById('pay-amount').value = '';
+
+    // Restart scanner
+    setTimeout(() => startScanner(), 800);
+
+  } catch (err) {
+    console.error('[ScanPay] Failed to save expense:', err);
+    toast('Failed to save: ' + (err.message || 'Unknown error'), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base">save</span> Save &amp; Track Expense';
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   IMAGE UPLOAD FALLBACK
+   ───────────────────────────────────────────────────────── */
+function handleUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  console.log('[ScanPay] Processing uploaded image:', file.name);
+  toast('Processing uploaded image…', 'info');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('scanner-canvas');
+      canvas.width  = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      const code = typeof jsQR !== 'undefined'
+        ? jsQR(imageData.data, img.width, img.height)
+        : null;
+
+      if (code) {
+        console.log('[ScanPay] jsQR decoded uploaded image:', code.data);
+        handleQRResult(code.data);
+      } else {
+        console.warn('[ScanPay] No QR code found in uploaded image');
+        toast('No QR code found in that image. Try a clearer photo.', 'error');
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  // Reset file input so the same file can be selected again
+  event.target.value = '';
+}
+
+/* ─────────────────────────────────────────────────────────
+   MODAL
+   ───────────────────────────────────────────────────────── */
+function closePayModal(e) {
+  if (e && e.target !== document.getElementById('pay-modal')) return;
+  document.getElementById('pay-modal').classList.remove('open');
+  // Resume scanning
+  startScanner();
+}
+
+/* ─────────────────────────────────────────────────────────
+   BACK BUTTON – stop camera on leave
+   ───────────────────────────────────────────────────────── */
+document.getElementById('back-btn').addEventListener('click', () => {
+  stopScanner();
+  console.log('[ScanPay] Navigating back — camera stopped');
+});
+
+window.addEventListener('pagehide', stopScanner);
+
+/* ─────────────────────────────────────────────────────────
+   INIT
+   ───────────────────────────────────────────────────────── */
+initSupabase();
+startScanner();
+</script>
 </body>
 </html>
