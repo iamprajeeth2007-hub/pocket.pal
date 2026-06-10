@@ -1,4 +1,7 @@
 backend/.venv/
+.env
+.env.local
+*.env
 *.log
 *.pyc
 __pycache__/
