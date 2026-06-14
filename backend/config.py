@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
 
     PORT: int = 8000
-    HOST: str = "0.0.0.0"
+    HOST: str = "127.0.0.1"
     ENV: str = "development"
 
     # CORS: comma-separated allowed origins e.g. "https://myapp.vercel.app,http://localhost:3000"
