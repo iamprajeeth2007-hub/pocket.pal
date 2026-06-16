@@ -24,16 +24,61 @@ pocket.pal/
 
 ---
 
-## Supabase Setup (REQUIRED FIRST)
+## 🚨 REQUIRED: Database Setup (DO THIS FIRST!)
+
+**Before you can save any expenses, you MUST set up the database tables in Supabase:**
 
 1. Go to: https://supabase.com/dashboard/project/zgnnxujzbjohaovsfuhj/sql/new
-2. Copy and run the entire contents of `schema.sql`
-3. Go to **Authentication → Providers → Email** → **disable "Confirm email"** (so users can sign in immediately)
-4. Get your **Service Role Key**: Settings → API → `service_role` (secret)
+2. Open the **SQL Editor** and create a new query
+3. Copy the entire contents of `schema.sql` from this project
+4. Paste it into the Supabase SQL Editor and click **Run**
+5. Go to **Authentication → Providers** and find **Email**
+   - Disable "Confirm email" (uncheck the toggle) so users can sign in immediately
+6. ✅ Your database is now ready!
+
+**Without these steps, you'll get a "Not Authenticated" error when trying to save expenses.**
 
 ---
 
 ## Local Development
+
+### Start Backend
+
+```bash
+cd backend
+python -m pip install -r requirements.txt
+python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+API available at: http://localhost:8000/docs
+
+### Start Frontend
+
+```bash
+cd frontend
+python -m http.server 3000
+```
+
+Frontend available at: http://localhost:3000
+
+**To use locally:**
+1. Sign up for a new account (this creates a Supabase user)
+2. Log in
+3. Add expenses — they'll be saved to your Supabase database!
+
+---
+
+## Backend Configuration Details
+
+The backend uses the `.env` file for configuration. Key variables:
+- `SUPABASE_URL` — your Supabase project URL
+- `SUPABASE_ANON_KEY` — public anon key (for client auth)
+- `SUPABASE_SERVICE_ROLE_KEY` — admin key (optional, for server-side operations)
+- `ALLOWED_ORIGINS` — CORS whitelist
+
+---
+
+## Local Development (Detailed)
 
 ### Backend
 

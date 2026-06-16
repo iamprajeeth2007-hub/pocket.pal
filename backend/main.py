@@ -74,10 +74,38 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
     token = credentials.credentials
     try:
         user_res = auth_client.auth.get_user(token)
-        if not user_res or not user_res.user:
+        # Support both object and dict response shapes from Supabase client libraries.
+        user = None
+        if hasattr(user_res, 'user'):
+            user = user_res.user
+        elif hasattr(user_res, 'data') and isinstance(user_res.data, dict):
+            user = user_res.data.get('user')
+        elif isinstance(user_res, dict):
+            user = user_res.get('data', {}).get('user')
+
+        if not user:
+            print(f"[DEBUG] get_current_user: user is None. user_res type: {type(user_res)}, user_res: {user_res}")
             raise HTTPException(status_code=401, detail="Invalid or expired session token.")
-        return user_res.user
+        
+        # Ensure user has an id attribute
+        if not hasattr(user, 'id'):
+            print(f"[DEBUG] get_current_user: user object missing 'id' attribute. user type: {type(user)}, user: {user}")
+            if isinstance(user, dict) and 'id' in user:
+                # Convert dict to object-like for compatibility
+                class UserObj:
+                    def __init__(self, d):
+                        for k, v in d.items():
+                            setattr(self, k, v)
+                user = UserObj(user)
+        
+        print(f"[DEBUG] get_current_user: user authenticated with id={getattr(user, 'id', 'MISSING')}")
+        return user
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        print(f"[DEBUG] get_current_user exception: {e}")
+        print(f"[DEBUG] Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
 
 # ── Request Models ────────────────────────────────────────────────────────────
@@ -111,7 +139,10 @@ def read_root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "supabase_connected": supabase is not None}
+    return {
+        "status": "ok",
+        "supabase_connected": supabase is not None or supabase_admin is not None
+    }
 
 # Smart Categorization
 @app.post("/api/expenses/categorize")
@@ -151,14 +182,19 @@ async def create_expense(expense: ExpenseCreate, user=Depends(get_current_user))
             "category": category,
             "date": expense.date
         }
+        print(f"[DEBUG] Creating expense for user {user.id}: {record}")
         db = get_db()
         response = db.table("expenses").insert(record).execute()
+        print(f"[DEBUG] Insert response: {response}")
         if not response.data:
             raise HTTPException(status_code=400, detail="Failed to save expense.")
         return response.data[0]
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        print(f"[ERROR] Exception in create_expense: {e}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ── UPI compatibility routes ────────────────────────────────────────────────────

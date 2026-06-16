@@ -296,9 +296,11 @@ const BACKEND_URL       = ''; // ← fill after Render deploy, e.g. 'https://poc
 
 const API_BASE = BACKEND_URL
   ? BACKEND_URL
-  : (location.origin.includes('localhost') || location.origin.includes('127.0.0.1')
+  : (location.protocol === 'file:' || !location.origin || location.origin === 'null'
       ? 'http://localhost:8000'
-      : location.origin);
+      : (location.origin.includes('localhost') || location.origin.includes('127.0.0.1')
+        ? 'http://localhost:8000'
+        : location.origin));
 
 /* ─────────────────────────────────────────────────────────
    STATE
@@ -341,19 +343,19 @@ function initSupabase() {
     sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('[ScanPay] Supabase client initialized');
 
-    // 1) Try sessionStorage token shared from index.html (same-origin new tab)
+    // 1) Try shared token from the dashboard via localStorage.
     try {
-      const shared = sessionStorage.getItem('pp_session');
+      const shared = localStorage.getItem('pp_session') || sessionStorage.getItem('pp_session');
       if (shared) {
         const parsed = JSON.parse(shared);
         if (parsed?.access_token) {
           authSession = parsed;
-          console.log('[ScanPay] Auth token loaded from sessionStorage');
+          console.log('[ScanPay] Auth token loaded from localStorage/sessionStorage');
           return; // No need to fetch — token already set
         }
       }
     } catch (e) {
-      console.warn('[ScanPay] Could not read sessionStorage session:', e);
+      console.warn('[ScanPay] Could not read shared auth token:', e);
     }
 
     // 2) Fallback: ask Supabase for a live session (works if cookie/localStorage exists)
